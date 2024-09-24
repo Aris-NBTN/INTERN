@@ -1,0 +1,17 @@
+{
+  "name": "gjs-col",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "grapesjs-cli serve",
+    "build": "grapesjs-cli build",
+    "bump": "npm version patch -m 'Bump v%s'"
+  },
+  "keywords": [
+    "grapesjs",
+    "plugin"
+  ],
+  "dependencies": {
+    "grapesjs-cli": "^4.1.3"
+  },
+  "version": "0.0.42"
+}

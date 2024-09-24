@@ -1,0 +1,8 @@
+User-Agent:*
+
+Disallow: /user/
+Disallow: /admin/
+Disallow: /checkout/
+Disallow: /cart/
+
+Sitemap: https://tiki.vn/seo/sitemaps/main-index.xml
