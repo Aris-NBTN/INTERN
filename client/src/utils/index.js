@@ -11,20 +11,12 @@ export const TYPE_EMPLOYEE = {
     adminUser: "adminUser"
 };
 
-const apiRoot = process.env.BUILD_MODE === 'dev'
+export const baseURL = process.env.BUILD_MODE === 'dev'
     ? "http://localhost:8082"
     : process.env.BUILD_MODE === 'production'
-        ? "https://www.tranhgohoangminh.com"
-        : '';
+        ? import.meta.env.VITE_API_URL : '';
 
-export const baseURL = apiRoot;
-
-const clientRoot = process.env.BUILD_MODE === 'dev'
+export const baseClient = process.env.BUILD_MODE === 'dev'
     ? "http://localhost:5173"
     : process.env.BUILD_MODE === 'production'
-        ? "https://hmweb3d.com"
-        : '';
-
-export const baseClient = clientRoot;
-
-
+        ? import.meta.env.VITE_CLIENT_URL : '';

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, Card, Col, Input, Row, Tree, Empty, message, Modal, Form, Tooltip, Typography } from 'antd'
 
-import LayoutAdmin from '~/components/layout/admin/Layout'
+import LayoutAdmin from '~/components/layout/Admin/Layout'
 import FileUi from '~/components/upload/FileUi';
 import Video from '~/components/video/Video';
 

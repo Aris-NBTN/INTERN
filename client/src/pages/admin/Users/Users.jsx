@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button, Input, Modal, Tabs, Form, Typography, TreeSelect, Select, Tooltip } from 'antd';
 
-import LayoutAdmin from '~/components/layout/admin/Layout'
+import LayoutAdmin from '~/components/layout/Admin/Layout'
 import Table from '~/components/table/Table';
 
 import { FilterDate, FilterSelect, FilterText } from '~/components/table/Filter';

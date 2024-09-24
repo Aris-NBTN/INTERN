@@ -39,7 +39,7 @@ const Success = lazy(() => import('Public/Status/Success'));
 const Cancel = lazy(() => import('Public/Status/Cancel'));
 
 // Admin
-const Dashboard = lazy(() => import('Admin/Dashboard/Dashboard'));
+const Dashboard = lazy(() => import('~/pages/admin/DashBoard/Dashboard'));
 const Info = lazy(() => import('Admin/Info/Info'));
 const Users = lazy(() => import('Admin/Users/Users'));
 const Courses = lazy(() => import('Admin/Courses/Courses'));

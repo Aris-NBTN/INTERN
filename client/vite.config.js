@@ -6,6 +6,9 @@ export default defineConfig({
     // eslint-disable-next-line no-undef
     'process.env': process.env,
   },
+  server: {
+    host: true,
+  },
   plugins: [
     react()
   ],

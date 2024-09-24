@@ -1,7 +1,7 @@
 import { Button, Card, Input, Form, Col, Row, Space } from 'antd'
 import { useEffect, useState } from 'react'
 
-import LayoutAdmin from '~/components/layout/admin/Layout'
+import LayoutAdmin from '~/components/layout/Admin/Layout'
 // import AntdUpload from '~/components/img/AntdImgUpload'
 import { useMediaQuery } from 'react-responsive';
 import { toastSuccess } from '~/components/toast';

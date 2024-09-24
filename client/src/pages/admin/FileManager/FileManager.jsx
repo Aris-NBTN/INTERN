@@ -3,7 +3,7 @@ import { Tree, Breadcrumb, Button, Popover, Input, Modal, Empty, Popconfirm, Row
 import { Menu, Item, Separator, Submenu, useContextMenu } from "react-contexify";
 
 import { deepCopyWithoutParent, findLeafKeys, selectAllFile, generateRandomKey } from './Folder';
-import LayoutAdmin from '~/components/layout/admin/Layout';
+import LayoutAdmin from '~/components/layout/Admin/Layout';
 import { toastError, toastSuccess } from '~/components/toast';
 
 import { baseURL } from '~/utils';

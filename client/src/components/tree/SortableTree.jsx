@@ -5,7 +5,7 @@ import { Tabs, Modal, Input, Button, Popconfirm, TreeSelect, Card, Dropdown, Ske
 import SortableTree, { changeNodeAtPath, removeNodeAtPath } from '@nosferatu500/react-sortable-tree';
 
 import { isUrl } from '~/utils/format';
-import LayoutAdmin from '~/components/layout/admin/Layout';
+import LayoutAdmin from '~/components/layout/Admin/Layout';
 import '@nosferatu500/react-sortable-tree/style.css';
 import './Menu.css';
 

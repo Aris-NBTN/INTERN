@@ -2,7 +2,7 @@ import { Button, Col, Form, Input, InputNumber, Modal, Row, Select, Tabs, theme,
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 
-import LayoutAdmin from '~/components/layout/admin/Layout'
+import LayoutAdmin from '~/components/layout/Admin/Layout'
 import Table from '~/components/table/Table';
 
 import { FilterText, FilterDate, FilterSorter, FilterSelect } from '~/components/table/Filter';

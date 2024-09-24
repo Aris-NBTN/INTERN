@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom';
 import { useMediaQuery } from 'react-responsive';
 
 import { toastError } from '~/components/toast';
-import LayoutAdmin from '~/components/layout/admin/Layout'
+import LayoutAdmin from '~/components/layout/Admin/Layout'
 import Table from '~/components/table/Table';
 import { FilterSelect, FilterText } from '~/components/table/Filter';
 import { FindNameById, FormatTag } from '~/components/table/Format';
