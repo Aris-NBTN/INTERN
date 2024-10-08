@@ -21,20 +21,20 @@ import { getPluginsApi } from '~/redux/slices/Data/pluginsSlice';
 const Pages = () => {
     const [page, setPage] = useState('');
     const [isLoaded, setIsLoaded] = useState(false);
+    const dispatch = useDispatch();
 
     const datascript = useSelector((state) => state.pluginsScript.pluginsScript);
     const loadingscript = useSelector((state) => state.pluginsScript.loading);
     const { plugins, loading: loadingPlugins } = useSelector((state) => state.plugins);
+    const { pluginsScript } = useSelector((state) => state.pluginsScript);
 
     const dataPlugins = useMemo(() =>
-        plugins.map((groupPage) => ({
+        plugins?.newData?.map((groupPage) => ({
             id: groupPage.id,
             src: `${baseURL}/uploads/${groupPage.src}`,
         })),
         [plugins]
     );
-
-    const dispatch = useDispatch();
 
     const putPages = (pageEdit, page) => {
         const date = new Date();
@@ -180,6 +180,7 @@ const Pages = () => {
                         Styles.customTypeSelect,
 
                     ]}
+                    canvas={pluginsScript[0]}
                     savePage={putPages}
                 />
             )}

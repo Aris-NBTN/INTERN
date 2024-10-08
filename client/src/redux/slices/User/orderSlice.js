@@ -12,7 +12,7 @@ const orderUserSlice = genericSlice({
         loading: true,
         error: false,
     },
-    getApi: getOrderUserApi,
+    getApi: [getOrderUserApi],
 });
 
 export default orderUserSlice.reducer;

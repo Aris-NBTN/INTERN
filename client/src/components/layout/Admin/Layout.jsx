@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
-import { Avatar, Button, Drawer, Dropdown, Layout, Menu, Popover, Select, Tooltip, Tour, Typography, theme } from 'antd';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Avatar, Badge, Button, Col, Drawer, Dropdown, Layout, Menu, Modal, Popover, Row, Select, Tooltip, Tour, Typography, theme } from 'antd';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -23,14 +23,19 @@ import { TYPE_EMPLOYEE } from "~/utils";
 
 import './Layout.css';
 import 'animate.css';
+import { getInfoApi } from '~/redux/slices/Data/infoSlice';
+import { MdContacts } from 'react-icons/md';
+import { IoNotificationsSharp } from 'react-icons/io5';
+import { getNotifyApi } from '~/redux/slices/Data/notificationSlice';
+import { putUsersApi, putUsersNotifyApi } from '~/redux/slices/Data/usersSlice';
 
 const { Header, Sider, Content } = Layout;
 
 const LayoutAdmin = ({
-    title = "Chicken War Studio",
-    description = "Chicken War Studio",
-    keywords = "Chicken War Studio",
-    author = "Chicken War Studio",
+    title,
+    description,
+    keywords,
+    author,
     children,
     header,
     button,
@@ -41,16 +46,59 @@ const LayoutAdmin = ({
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
+    const popRef = useRef(null);
+
     const isMobile = useMediaQuery({ query: '(max-width: 576px)' });
     const { token: { colorBgContainer, colorPrimary } } = theme.useToken();
-    const { user: { userType } } = useSelector((state) => state.auth);
+    const { user: { userType, avatar } } = useSelector((state) => state.auth);
+    const { user } = useSelector((state) => state.auth);
     const currentLanguage = useSelector((state) => state.language.currentLanguage);
     const collapsed = useSelector((state) => state.collapsed.collapsedMode);
-    const darkMode = useSelector((state) => state.theme.darkMode);
-
-    const [open, setOpen] = useState(false);
+    const { darkMode } = useSelector((state) => state.theme);
+    const { info, loading } = useSelector(state => state.info);
     const [openTour, setOpenTour] = useState(false);
-    const popRef = useRef(null);
+    const { notification, loading: loadingNotify } = useSelector((state) => state.notification);
+    const [dataNotify, setDataNotify] = useState([]);
+
+    const [openNotify, setOpenNotify] = useState(false);
+    const [notify, setNotify] = useState();
+    const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        const handleNotificationClick = (id, data) => {
+            setOpenNotify(true);
+            setNotify(data);
+            dispatch(putUsersNotifyApi({ id: user._id, notifyId: data._id }));
+            setDataNotify(prevData =>
+                prevData.filter(notify => notify.key !== id)
+            );
+        };
+
+        const filteredData = notification?.newData
+            ?.filter(data => data?.show && !user.notify?.includes(data?._id))
+            .map((data) => ({
+                key: data?._id,
+                label: (
+                    <Row
+                        onClick={() => handleNotificationClick(data._id, data)}
+                        gutter={[24, 24]}
+                        style={{ width: 350 }}
+                    >
+                        <Col span={2}>
+                            <Avatar style={{ backgroundColor: colorPrimary }}>AD</Avatar>
+                        </Col>
+                        <Col className='flex justify-between items-center' span={22}>
+                            <Typography.Text className='text-inline-notify ms-2'>
+                                {data?.title || 'No message'}
+                            </Typography.Text>
+                            <Badge color={colorPrimary} />
+                        </Col>
+                    </Row>
+                )
+            }));
+
+        setDataNotify(filteredData);
+    }, [notification, colorPrimary, user, dispatch]);
 
     const languages = [
         {
@@ -80,12 +128,6 @@ const LayoutAdmin = ({
                             icon: <FaInfoCircle size={18} />,
                             label: "Thông tin",
                             link: "/admin/info",
-                        },
-                        {
-                            key: "menu",
-                            icon: <FaBars size={18} />,
-                            label: "Menu",
-                            link: "/admin/menu",
                         },
                         {
                             key: "layout",
@@ -120,16 +162,28 @@ const LayoutAdmin = ({
                     link: "/admin/courses",
                 });
                 menuItems.push({
+                    key: "contacts",
+                    icon: <MdContacts size={18} />,
+                    label: "Liên hệ",
+                    link: "/admin/contacts",
+                });
+                menuItems.push({
                     key: "orders",
                     icon: <FaShoppingCart size={18} />,
                     label: "Đơn hàng",
                     link: "/admin/orders",
                 });
                 menuItems.push({
+                    key: "notification",
+                    icon: <IoNotificationsSharp size={18} />,
+                    label: "Thông báo",
+                    link: "/admin/notification",
+                });
+                menuItems.push({
                     key: "email",
                     icon: <IoMdMail size={18} />,
                     label: "Email",
-                    link: "/admin/email",
+                    link: "/admin/emails",
                 });
                 menuItems.push({
                     key: "fileManager",
@@ -149,18 +203,12 @@ const LayoutAdmin = ({
                     label: "Key thanh toán",
                     link: "/admin/key-payment",
                 });
-                // menuItems.push({
-                //     key: "language",
-                //     icon: <FaLanguage size={18} />,
-                //     label: "Ngôn ngữ",
-                //     // link: "/admin/language",
-                // });
-                // menuItems.push({
-                //     key: "setting",
-                //     icon: <FaGear size={18} />,
-                //     label: "Cài đặt",
-                //     // link: "/admin/setting",
-                // });
+                menuItems.push({
+                    key: "setting",
+                    icon: <FaGear size={18} />,
+                    label: "Cài đặt",
+                    link: "/admin/setting",
+                });
                 break;
             }
 
@@ -218,12 +266,12 @@ const LayoutAdmin = ({
     }, [userType]);
 
     function getInitials(name) {
-        return name
-            .match(/(\b\S)?/g)
-            .join("")
-            .match(/(^\S|\S$)?/g)
-            .join("")
-            .toUpperCase();
+        if (!name || typeof name !== 'string') {
+            return '';
+        }
+        const nameParts = name.split(' ');
+        const initials = nameParts.map(part => part.charAt(0).toUpperCase()).join('');
+        return initials;
     }
 
     const handleChange = (e) => {
@@ -235,9 +283,22 @@ const LayoutAdmin = ({
         const findMenuKey = (items) =>
             items.reduce((acc, item) => {
                 const { link, key, children } = item;
-                if (link && window.location.pathname.startsWith(link) && link.length > acc.length) {
-                    return { key, length: link.length };
+                if (link) {
+                    // Tạo 2 phiên bản của link: dạng gốc và dạng có thêm "s"
+                    const singularLink = link.endsWith('s') ? link.slice(0, -1) : link;
+                    const pluralLink = link.endsWith('s') ? link : `${link}s`;
+
+                    // Kiểm tra nếu đường dẫn hiện tại bắt đầu bằng singularLink hoặc pluralLink
+                    const isActive =
+                        window.location.pathname.startsWith(link) ||
+                        window.location.pathname.startsWith(singularLink) ||
+                        window.location.pathname.startsWith(pluralLink);
+
+                    if (isActive && link.length > acc.length) {
+                        return { key, length: link.length };
+                    }
                 }
+
                 if (children) {
                     const child = findMenuKey(children);
                     if (child.length > acc.length) {
@@ -250,6 +311,7 @@ const LayoutAdmin = ({
         const { key } = findMenuKey(menuSidebars);
         return key ? [key] : [];
     };
+
 
     const onClickMenu = (menuLink) => {
         const { link } = menuLink.item.props;
@@ -283,14 +345,25 @@ const LayoutAdmin = ({
         }
     };
 
+    useEffect(() => {
+        if (loading) {
+            dispatch(getInfoApi());
+        }
+    }, []);
+
+    useEffect(() => {
+        if (loadingNotify) {
+            dispatch(getNotifyApi());
+        }
+    }, []);
+
     return (
         <HelmetProvider>
             <Helmet>
-                <meta charSet="utf-8" />
-                <meta name="description" content={description} />
-                <meta name="keywords" content={keywords} />
-                <meta name="author" content={author} />
-                <title>{title}</title>
+                <meta name="description" content={description || info[0]?.description} />
+                <meta name="keywords" content={keywords || info[0]?.keywords} />
+                <meta name="author" content={author || info[0]?.manage} />
+                <title>{title || info[0]?.name}</title>
             </Helmet>
 
             <Layout>
@@ -403,7 +476,8 @@ const LayoutAdmin = ({
                                         </Popover>
                                     )}
 
-                                    {tours && (
+
+                                    {!isMobile && tours && (
                                         <>
                                             <Tooltip placement="bottom" title="Trợ giúp">
                                                 <div ref={popRef} onClick={() => setOpenTour(true)}>
@@ -427,88 +501,117 @@ const LayoutAdmin = ({
                                         </>
                                     )}
 
-                                    <Tooltip placement="bottom" title="Thông báo">
-                                        <div ref={popRef}>
+                                    <Dropdown
+                                        trigger={['click']}
+                                        menu={{
+                                            items: dataNotify
+                                        }}
+                                        placement="bottomRight"
+                                        arrow={{
+                                            pointAtCenter: true,
+                                        }}
+                                    >
+                                        <Badge className='me-1' count={dataNotify?.length}>
                                             <IoMdNotifications
                                                 size={28}
                                                 className='cursor-pointer'
                                             />
-                                        </div>
-                                    </Tooltip>
+                                        </Badge>
+                                    </Dropdown>
 
                                     {userType === 'admin' ? (
-                                        <Avatar
-                                            className='cursor-pointer'
-                                            style={{
-                                                backgroundColor: colorPrimary,
-                                            }}
-                                            icon="AD"
-                                        />
+                                        <>
+                                            {avatar ? (
+                                                <Avatar
+                                                    className='cursor-pointer'
+                                                    src={avatar}
+                                                />
+                                            ) : (
+                                                <>
+                                                    <Avatar
+                                                        className='cursor-pointer'
+                                                        style={{
+                                                            backgroundColor: colorPrimary,
+                                                        }}
+                                                        icon={getInitials(user?.name)}
+                                                    />
+                                                </>
+                                            )}
+                                        </>
                                     ) : (
-                                        <Dropdown
-                                            trigger={['click']}
-                                            menu={{
-                                                items: [
-                                                    {
-                                                        key: 'user',
-                                                        label: (
-                                                            <div className='flex items-center gap-1' onClick={() => navigate('/user')}>
-                                                                <FaTachometerAlt size={18} />
-                                                                <Typography.Text>Trang chủ</Typography.Text>
-                                                            </div>
-                                                        ),
-                                                    },
-                                                    {
-                                                        key: 'info',
-                                                        label: (
-                                                            <div className='flex items-center gap-1' onClick={() => navigate('/user/info')}>
-                                                                <FaUser size={18} />
-                                                                <Typography.Text>Thông tin cá nhân</Typography.Text>
-                                                            </div>
-                                                        ),
-                                                    },
-                                                    {
-                                                        key: 'courses',
-                                                        label: (
-                                                            <div className='flex items-center gap-1' onClick={() => navigate('/user/courses')}>
-                                                                <FaYoutube size={18} />
-                                                                <Typography.Text>Khóa học của tôi</Typography.Text>
-                                                            </div>
-                                                        ),
-                                                    },
-                                                    {
-                                                        key: 'orders',
-                                                        label: (
-                                                            <div className='flex items-center gap-1' onClick={() => navigate('/user/orders')}>
-                                                                <PiIdentificationCardFill size={18} />
-                                                                <Typography.Text>Lịch sử mua hàng</Typography.Text>
-                                                            </div>
-                                                        ),
-                                                    },
-                                                    {
-                                                        key: 'change-password',
-                                                        label: (
-                                                            <div className='flex items-center gap-1' onClick={() => navigate('/user/change-password')}>
-                                                                <RiLockPasswordFill size={18} />
-                                                                <Typography.Text>Đổi mật khẩu</Typography.Text>
-                                                            </div>
-                                                        ),
-                                                    },
-                                                ]
-                                            }}
-                                            placement="bottomRight"
-                                            arrow={{
-                                                pointAtCenter: true,
-                                            }}
-                                        >
-                                            <Avatar
-                                                className='cursor-pointer'
-                                                style={{
-                                                    backgroundColor: colorPrimary,
+                                        <>
+                                            <Dropdown
+                                                trigger={['click']}
+                                                menu={{
+                                                    items: [
+                                                        {
+                                                            key: 'user',
+                                                            label: (
+                                                                <div className='flex items-center gap-1' onClick={() => navigate('/user')}>
+                                                                    <FaTachometerAlt size={18} />
+                                                                    <Typography.Text>Trang chủ</Typography.Text>
+                                                                </div>
+                                                            ),
+                                                        },
+                                                        {
+                                                            key: 'info',
+                                                            label: (
+                                                                <div className='flex items-center gap-1' onClick={() => navigate('/user/info')}>
+                                                                    <FaUser size={18} />
+                                                                    <Typography.Text>Thông tin cá nhân</Typography.Text>
+                                                                </div>
+                                                            ),
+                                                        },
+                                                        {
+                                                            key: 'courses',
+                                                            label: (
+                                                                <div className='flex items-center gap-1' onClick={() => navigate('/user/courses')}>
+                                                                    <FaYoutube size={18} />
+                                                                    <Typography.Text>Khóa học của tôi</Typography.Text>
+                                                                </div>
+                                                            ),
+                                                        },
+                                                        {
+                                                            key: 'orders',
+                                                            label: (
+                                                                <div className='flex items-center gap-1' onClick={() => navigate('/user/orders')}>
+                                                                    <PiIdentificationCardFill size={18} />
+                                                                    <Typography.Text>Lịch sử mua hàng</Typography.Text>
+                                                                </div>
+                                                            ),
+                                                        },
+                                                        {
+                                                            key: 'change-password',
+                                                            label: (
+                                                                <div className='flex items-center gap-1' onClick={() => navigate('/user/change-password')}>
+                                                                    <RiLockPasswordFill size={18} />
+                                                                    <Typography.Text>Đổi mật khẩu</Typography.Text>
+                                                                </div>
+                                                            ),
+                                                        },
+                                                    ]
                                                 }}
-                                                icon={getInitials('ADmin')}
-                                            />
-                                        </Dropdown>
+                                                placement="bottomRight"
+                                                arrow={{
+                                                    pointAtCenter: true,
+                                                }}
+                                            >
+                                                {avatar ? (
+                                                    <Avatar
+                                                        className='cursor-pointer'
+                                                        src={avatar}
+                                                    />
+                                                ) : (
+                                                    <Avatar
+                                                        className='cursor-pointer'
+                                                        style={{
+                                                            backgroundColor: colorPrimary,
+                                                        }}
+                                                        icon={getInitials(user?.name)}
+                                                    />
+                                                )}
+                                            </Dropdown>
+                                        </>
                                     )}
                                 </div>
                             </Header>
@@ -536,6 +639,17 @@ const LayoutAdmin = ({
                     )}
                 </Layout>
             </Layout>
+
+            <Modal
+                title={`Thông báo: ${notify?.title}`}
+                centered
+                open={openNotify}
+                onOk={() => setOpenNotify(false)}
+                onCancel={() => setOpenNotify(false)}
+                width={1000}
+            >
+                {notify?.content}
+            </Modal>
         </HelmetProvider>
     );
 };

@@ -1,27 +1,40 @@
-import React from 'react'
-import { Card, Col, Form, Input, Row, Select } from 'antd'
+import React, { useEffect } from 'react'
+import { Button, Card, Col, Form, Input, Radio, Row, Select } from 'antd'
 import { useSelector } from 'react-redux';
 
 import LayoutAdmin from '~/components/layout/Admin/Layout'
 import UploadAvatar from '~/components/upload/UploadAvatar';
+import { userApi } from '~/apis/userApi';
 
 const HomePage = () => {
     const [formUser] = Form.useForm();
-    const user = useSelector((state) => state.auth.user);
-    console.log(user);
+    const { user } = useSelector((state) => state.auth);
 
-    formUser.setFieldValue('name', user?.name);
-    formUser.setFieldValue('phone', user?.phone);
-    formUser.setFieldValue('email', user?.email);
-    formUser.setFieldValue('address', user?.address);
+    useEffect(() => {
+        if (user?._id) {
+            formUser.setFieldsValue(user);
+        }
+    }, [user]);
 
-    const handlePutUser = (values) => {
+    const handlePutUser = (data) => {
+        data.id = user._id;
+        userApi
+            .putUser(data)
+            .then((res) => {
+                console.log(res);
+            })
+            .catch((err) => {
+                console.log(err);
+            });
     }
 
     return (
         <LayoutAdmin
             title='Thông tin cá nhân'
-            header={'THÔNG TIN CÁ NHÂN'}
+            header={'THÔNG TIN'}
+            button={<>
+                <Button type="primary" onClick={() => formUser.submit()}>Lưu Thông Tin</Button>
+            </>}
         >
             <Form
                 form={formUser}
@@ -29,12 +42,24 @@ const HomePage = () => {
                 layout="vertical"
                 onFinish={handlePutUser}
             >
-                <Row gutter={[18, 18]}>
+                <Row gutter={[24, 24]}>
                     <Col span={24}>
                         <Card
                             title="Thông tin tài khoản"
                         >
                             <Row gutter={[14, 14]}>
+                                <Form.Item
+                                    className='mb-0 hidden'
+                                    label="Email"
+                                    name='_id'
+                                >
+                                    <Input
+                                        size='large'
+                                        readOnly
+                                        placeholder='Nhập tên người dùng'
+                                    />
+                                </Form.Item>
+
                                 <Col md={{ span: 12 }} span={24}>
                                     <Form.Item
                                         className='mb-0'
@@ -72,28 +97,34 @@ const HomePage = () => {
                             title="Thông tin cá nhân"
                         >
                             <Row gutter={[14, 14]}>
-                                <Col
-                                    className='flex items-center justify-center'
-                                    md={{ span: 5 }} span={24}>
-                                    <UploadAvatar />
-                                </Col>
-                                <Col md={{ span: 19 }} span={24}>
-                                    <Row gutter={[14, 14]}>
-                                        <Col span={24}>
-                                            <Form.Item
-                                                name='name'
-                                                label="Tên người dùng"
-                                                rules={[{ required: true, message: 'Vui lòng nhập tên người dùng!' }]}
-                                            >
-                                                <Input
-                                                    size='large'
-                                                    readOnly
-                                                    placeholder='Nhập tên người dùng'
-                                                />
-                                            </Form.Item>
-                                        </Col>
+                                <Col xl={{ span: 20 }} md={{ span: 20 }} span={24}>
+                                    <Form.Item
+                                        name='name'
+                                        label="Tên người dùng"
+                                        rules={[{ required: true, message: 'Vui lòng nhập tên người dùng!' }]}
+                                    >
+                                        <Input
+                                            size='large'
 
-                                        <Col md={{ span: 8 }} span={24}>
+                                            placeholder='Nhập tên người dùng'
+                                        />
+                                    </Form.Item>
+                                </Col>
+
+                                <Col className='flex' xl={{ span: 4 }} md={{ span: 4 }} span={24}>
+                                    <Form.Item
+                                        name='gender'
+                                        label="Giới tính"
+                                        rules={[{ required: true, message: 'Vui lòng nhập tên người dùng!' }]}
+                                    >
+                                        <Radio.Group>
+                                            <Radio value={'Nam'}>Nam</Radio>
+                                            <Radio value={"Nữ"}>Nữ</Radio>
+                                        </Radio.Group>
+                                    </Form.Item>
+                                </Col>
+
+                                {/* <Col md={{ span: 8 }} span={24}>
                                             <Form.Item
                                                 className='mb-2'
                                                 name="province"
@@ -148,28 +179,24 @@ const HomePage = () => {
                                                 >
                                                 </Select>
                                             </Form.Item>
-                                        </Col>
+                                        </Col> */}
 
-                                        <Col span={24}>
-                                            <Form.Item
-                                                className='mb-2'
-                                                name="address"
-                                                label="Địa chỉ"
-                                                rules={[{ required: true, message: 'Chọn xã hoặc phường!' }]}
-                                            >
-                                                <Input
-                                                    size='large'
-                                                    placeholder='Nhập địa chỉ'
-                                                />
-                                            </Form.Item>
-                                        </Col>
-                                    </Row>
+                                <Col span={24}>
+                                    <Form.Item
+                                        className='mb-2'
+                                        name="address"
+                                        label="Địa chỉ"
+                                        rules={[{ required: true, message: 'Nhập địa chỉ!' }]}
+                                    >
+                                        <Input
+                                            size='large'
+                                            placeholder='Nhập địa chỉ'
+                                        />
+                                    </Form.Item>
                                 </Col>
                             </Row>
                         </Card>
                     </Col>
-
-
                 </Row>
             </Form>
         </LayoutAdmin>

@@ -1,5 +1,5 @@
-import { Button, Col, Form, Input, InputNumber, Modal, Row, Select, Tabs, theme, Tooltip, Typography } from 'antd'
-import { useEffect, useMemo, useState } from 'react'
+import { Button, Col, Divider, Form, Input, InputNumber, Modal, Row, Select, Tabs, Tag, theme, Tooltip, Typography } from 'antd'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 
 import LayoutAdmin from '~/components/layout/Admin/Layout'
@@ -10,17 +10,16 @@ import { FindNameById, FormatDay, FormatDayTime, FormatPerCennt, FormatPrice } f
 
 import { genericDispatch } from '~/redux/utils';
 import { useDispatch, useSelector } from 'react-redux';
-import { addCourseApi, getCourseApi, delCourseApi, putCourseApi } from '~/redux/slices/Data/coursesSlice';
+import { addCourseApi, getCourseApi, delCourseApi, putCourseApi, putOrderCourseApi } from '~/redux/slices/Data/coursesSlice';
 import { addCategoryCouresApi, getCategoryCouresApi, delCategoryCouresApi, putCategoryCouresApi } from '~/redux/slices/Data/categoryCourseSlice';
 
 import { exportDataExcel } from '~/utils/export';
-import { MdAddCircle, MdSlowMotionVideo } from "react-icons/md";
+import { MdSlowMotionVideo } from "react-icons/md";
 import FileAntd from '~/components/upload/FileAntd';
-import { baseURL, baseClient } from '~/utils/index'
+import { baseURL } from '~/utils/index'
 import { FaRegStar, FaStar, FaStarHalfAlt } from 'react-icons/fa';
-import { FaCircleCheck } from 'react-icons/fa6';
-import { toastSuccess } from '~/components/toast';
 
+let index = 0;
 
 const Courses = () => {
     const navigate = useNavigate();
@@ -29,25 +28,32 @@ const Courses = () => {
     const [formAddCourse] = Form.useForm();
     const [formAddCategory] = Form.useForm();
     const [formInfo] = Form.useForm();
+    const [form] = Form.useForm();
 
     const { token: { colorPrimary } } = theme.useToken();
 
     const price = Form.useWatch('price', formAddCourse);
     const sale = Form.useWatch('sale', formAddCourse);
+    const [drag, setDrag] = useState(localStorage.getItem('drag') === 'true' ? true : false);
+    const inputRef = useRef(null);
 
     // Modal
     const [openInFor, setOpenInFor] = useState(false);
     const [openCourse, setOpenCourse] = useState(false);
     const [openCategory, setOpenCategory] = useState(false);
 
-    const [info, setInfo] = useState('');
+    // const [info, setInfo] = useState('');
+
+    const [items, setItems] = useState([]);
+    const [svgCodes, setSvgCodes] = useState({});
 
     // Data
     const { courses, loading: loadingCourses } = useSelector((state) => state.courses);
-    const { categoryCourses: categories, loading: loadingCategory } = useSelector((state) => state.categoryCourses);
+    const { categoryCourses: category, loading: loadingCategory } = useSelector((state) => state.categoryCourses);
+    const categories = category?.newData;
 
     const dataCourses = useMemo(() =>
-        courses.map((course) => ({
+        courses?.newData?.map((course) => ({
             ...course,
             key: course._id,
         })),
@@ -55,19 +61,30 @@ const Courses = () => {
     );
 
     const dataCategoryCourse = useMemo(() =>
-        categories.map((category) => ({
+        categories?.map((category) => ({
             ...category,
             key: category._id,
         })),
         [categories]
     );
 
+    const addItem = (values) => {
+        const { name, svgCode } = values;
+        const newItem = name || `New item ${index++}`;
+        setItems([...items, newItem]);
+        setSvgCodes({ ...svgCodes, [newItem]: svgCode }); // Lưu mã SVG cho item mới
+        form.resetFields();
+        setTimeout(() => {
+            inputRef.current?.focus();
+        }, 0);
+    };
+
     // Column
     const columnsCourse = [
         {
             title: 'Tên khóa học',
             dataIndex: 'name',
-            width: '10%',
+            width: '15%',
             type: 'text',
             editable: true,
             ellipsis: {
@@ -83,7 +100,7 @@ const Courses = () => {
         {
             title: 'Link',
             dataIndex: 'slug',
-            width: '10%',
+            width: '8%',
             type: 'text',
             editable: false,
             ellipsis: {
@@ -108,14 +125,14 @@ const Courses = () => {
             width: '10%',
             type: 'select',
             editable: true,
-            optionSelect: Array.isArray(categories) && categories.length > 0 ? categories?.map(item => ({ label: item.category, value: item._id })) : [],
-            ...(Array.isArray(categories) && categories.length > 0 ? FilterSelect('category', categories.map(item => ({ text: item.category, value: item._id }))) : {}),
-            render: (category) => (category && categories && Array.isArray(categories) && categories.length > 0) ? FindNameById(category, categories, 'category') : null,
+            optionSelect: Array.isArray(categories) && categories?.length > 0 ? categories?.map(item => ({ label: item.category, value: item._id })) : [],
+            ...(Array.isArray(categories) && categories?.length > 0 ? FilterSelect('category', categories?.map(item => ({ text: item.category, value: item._id }))) : {}),
+            render: (category) => (category && categories && Array.isArray(categories) && categories?.length > 0) ? FindNameById(category, categories, 'category') : null,
         },
         {
             title: 'Giá',
             dataIndex: 'price',
-            width: '7%',
+            width: '8%',
             type: 'price',
             editable: true,
             ...FilterSorter({ dataIndex: 'price', type: 'number' }),
@@ -169,7 +186,6 @@ const Courses = () => {
                     <Button type='primary' ghost onClick={() => {
                         formInfo.setFieldsValue(record);
                         setOpenInFor(true);
-                        setInfo(record);
                     }}
                     >
                         Thông tin
@@ -235,8 +251,8 @@ const Courses = () => {
     }
 
     useEffect(() => {
-        if (loadingCourses === true) {
-            dispatch(getCourseApi());
+        if (loadingCourses) {
+            dispatch(getCourseApi({ page: 1, limit: localStorage.getItem('pageSize') || 10 }));
         }
     }, []);
 
@@ -261,6 +277,7 @@ const Courses = () => {
 
     return (
         <LayoutAdmin
+            title={'Khóa học'}
             header={
                 <>
                     <div className='flex items-center'>
@@ -270,13 +287,32 @@ const Courses = () => {
             }
             button={
                 <>
+                    {drag ?
+                        <Button onClick={() => {
+                            setDrag(false);
+                            localStorage.setItem('drag', 'false');
+                        }}>
+                            <Typography>Tắt sắp xếp</Typography>
+                        </Button>
+                        :
+                        <Button type='primary' onClick={() => {
+                            setDrag(true);
+                            localStorage.setItem('drag', 'true');
+                        }}>
+                            Bật sắp xếp
+                        </Button>}
+
                     <Button type='primary' onClick={() => { setOpenCategory(true) }}> Thêm danh mục</Button>
                     <Button type='primary' onClick={() => setOpenCourse(true)}>Thêm khóa học</Button>
-                    {/* <Button onClick={() => exportDataExcel(data, 'Course.xlsx')} type='primary'>Xuất file Excel</Button> */}
+                    <Button onClick={() => exportDataExcel(dataCourses, 'Course.xlsx')} type='primary'>Xuất file Excel</Button>
                 </>
             }
         >
             <Table
+                ApiPut={putOrderCourseApi}
+                Api={getCourseApi}
+                dragMode={drag}
+                total={courses?.totalPages}
                 loading={loadingCourses}
                 data={dataCourses}
                 columns={columnsCourse}
@@ -284,120 +320,19 @@ const Courses = () => {
                 onDelete={handleDelCourse}
                 button={(record) => (
                     <div className='flex gap-3'>
-                        <MdSlowMotionVideo onClick={() => navigate(`/admin/course/${record.slug}`)} size={20} color='red' />
+                        <MdSlowMotionVideo onClick={() => {
+                            navigate(`/admin/course/${record._id}`);
+                            localStorage.setItem('name-course', record.name);
+                        }}
+                            size={20} color='red'
+                        />
                     </div>
                 )}
             />
 
             {/* Infor */}
             <Modal
-                title=<>
-                    <div className="flex items-center justify-between">
-                        <div> Thông tin khóa học: <Typography.Text type='danger'>{formInfo.getFieldValue('name')}</Typography.Text></div>
-                        <Button
-                            className='me-4'
-                            // type='primary'
-                            icon={info?.seo ? <FaCircleCheck size={20} color={colorPrimary} /> : <MdAddCircle size={20} color='red' />}
-                            onClick={() => {
-                                const ldJs = {
-                                    "@context": "https://schema.org/",
-                                    "@id": info?.slug,
-                                    "@type": "Course",
-                                    "name": info?.name,
-                                    "description": info?.description,
-                                    "publisher": {
-                                        "@type": "Organization",
-                                        "name": "Chicken War Studio",
-                                        "url": `${baseClient}`
-                                    },
-                                    "provider": {
-                                        "@type": "Organization",
-                                        "name": "Chicken War Studio",
-                                        "url": `${baseClient}`
-                                    },
-                                    "image": [
-                                        `${baseURL}/upload/course/123/${info?.imgDetail}`,
-                                        `${baseURL}/upload/course/123/${info?.img}`
-                                    ],
-                                    "aggregateRating": {
-                                        "@type": "AggregateRating",
-                                        "ratingValue": info?.star,
-                                        "ratingCount": 2000,
-                                        "reviewCount": 1200
-                                    },
-                                    "offers": [
-                                        {
-                                            "@type": "Offer",
-                                            "category": info?.category,
-                                            "priceCurrency": "VND",
-                                            "price": info?.price
-                                        }
-                                    ],
-                                    "hasCourseInstance": [
-                                        {
-                                            "@type": "CourseInstance",
-                                            "courseMode": "Blended",
-                                            "location": "HoChiMinh University",
-                                            "courseSchedule": {
-                                                "@type": "Schedule",
-                                                "duration": "PT3H",
-                                                "repeatFrequency": "Daily",
-                                                "repeatCount": 31
-                                            },
-                                            "instructor": [
-                                                {
-                                                    "@type": "Person",
-                                                    "name": "Nguyen Bac Trung Nam",
-                                                    "description": "3D Artist",
-                                                    "image": `${baseClient}`
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "@type": "CourseInstance",
-                                            "courseMode": "Online",
-                                            "courseWorkload": "PT22H"
-                                        }
-                                    ],
-                                    "totalHistoricalEnrollment": 400,
-                                    "datePublished": FormatDay(info?.createdAt),
-                                    "educationalLevel": "Advanced",
-                                    "about": [
-                                        "3D Modeling",
-                                        "3D environment",
-                                        "3D artist"
-                                    ],
-                                    "teaches": [
-                                        "Practice and apply systems thinking to plan for change",
-                                        "Understand how memory allocation works."
-                                    ],
-                                    "financialAidEligible": "Scholarship Available",
-                                    "inLanguage": "vn",
-                                    "availableLanguage": [
-                                        "vn",
-                                        "es"
-                                    ],
-                                    "coursePrerequisites": [
-                                        "Basic understanding of C++ up to arrays and functions.",
-                                        `${baseClient}`
-                                    ],
-                                    "educationalCredentialAwarded": [
-                                        {
-                                            "@type": "EducationalOccupationalCredential",
-                                            "name": "3D Modeling Certificate",
-                                            "url": `${baseClient}`,
-                                            "credentialCategory": "Certificate"
-                                        }
-                                    ]
-                                }
-                                toastSuccess('ldjs', 'Tạo file thành công', 'Đã tạo file LD+JS, vui lòng cập nhập!');
-                                formInfo.setFieldValue('seo', ldJs);
-                            }}
-                        >
-                            {info?.seo ? 'Đã tạo file LD+JS' : 'Tạo file LD+JS'}
-                        </Button>
-                    </div>
-                </>
+                title=<>  Thông tin khóa học: <Typography.Text type='danger'>{formInfo.getFieldValue('name')}</Typography.Text> </>
                 centered
                 open={openInFor}
                 maskClosable={false}
@@ -447,7 +382,6 @@ const Courses = () => {
                             placeholder='Chọn & nhập điều kiện tiên quyết'
                             mode="tags"
 
-                            tokenSeparators={[',']}
                         />
                     </Form.Item>
 
@@ -461,7 +395,7 @@ const Courses = () => {
                             className='w-full mb-2'
                             placeholder='Chọn & nhập đối tượng khách hàng'
                             mode="tags"
-                            tokenSeparators={[',']}
+
                         />
                     </Form.Item>
 
@@ -476,7 +410,7 @@ const Courses = () => {
                             placeholder='Chọn & nhập tiêu chí đầu ra'
                             mode="tags"
 
-                            tokenSeparators={[',']}
+
                         />
                     </Form.Item>
 
@@ -491,7 +425,144 @@ const Courses = () => {
                             placeholder='Chọn & nhập lợi ích'
                             mode="tags"
 
-                            tokenSeparators={[',']}
+
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        className='mb-2'
+                        name="includes"
+                        label="Khóa học bao gồm"
+                    >
+                        <Select
+                            size='large'
+                            mode='multiple'
+                            placeholder="Chọn & nhập thông tin"
+                            tagRender={(props) => {
+                                const { value, closable, onClose } = props;
+                                if (value !== undefined) {
+                                    const data = JSON.parse(value);
+                                    return (
+                                        <Tag
+                                            style={{ height: 32, marginInlineEnd: 4 }}
+                                            closable={closable}
+                                            onClose={onClose}
+                                            className='flex items-center'
+                                        >
+                                            <div className="flex">
+                                                {data.svgCode ? (
+                                                    <div
+                                                        dangerouslySetInnerHTML={{ __html: data.svgCode }}
+                                                        style={{ width: '20px', marginRight: '8px' }}
+                                                    />
+                                                ) : null}
+                                                {data.name}
+                                            </div>
+                                        </Tag>
+                                    );
+                                }
+                            }}
+                            dropdownRender={(menu) => (
+                                <>
+                                    {menu}
+                                    <Divider
+                                        style={{
+                                            margin: '8px 0',
+                                        }}
+                                    />
+
+                                    <Form form={form} onFinish={addItem} layout="vertical">
+                                        <div className="flex gap-2 mb-2">
+                                            <Form.Item
+                                                name="name"
+                                                className='!mb-0'
+                                                rules={[{ required: true, message: 'Nhập thông tin!' }]}
+                                            >
+                                                <Input
+                                                    style={{ width: 200 }}
+                                                    placeholder="Nhập thông tin"
+                                                    ref={inputRef}
+                                                    onKeyDown={(e) => e.stopPropagation()}
+                                                />
+                                            </Form.Item>
+
+                                            <Form.Item
+                                                name="svgCode"
+                                                className='!mb-0'
+                                                rules={[{ required: true, message: 'Nhập SVG icon!' }]}
+                                            >
+                                                <Input
+                                                    style={{ width: 200 }}
+                                                    placeholder="Nhập mã SVG icon"
+                                                    onKeyDown={(e) => e.stopPropagation()}
+                                                />
+                                            </Form.Item>
+
+                                            <Button
+                                                className="w-full"
+                                                type="primary"
+                                                ghost
+                                                htmlType="submit"
+                                            >
+                                                Thêm thông tin
+                                            </Button>
+                                        </div>
+                                    </Form>
+                                </>
+                            )}
+                            options={items.map((item) => ({
+                                label: (
+                                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                                        {svgCodes[item] && (
+                                            <div
+                                                dangerouslySetInnerHTML={{ __html: svgCodes[item] }}
+                                                style={{ width: '20px', marginRight: '8px' }}
+                                            />
+                                        )}
+                                        {item}
+                                    </div>
+                                ),
+                                value: JSON.stringify({ name: item, svgCode: svgCodes[item] || '' }),
+                            }))}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        className='mb-2'
+                        name="hidden"
+                        label="Ẩn thông tin"
+                    >
+                        <Select
+                            size='large'
+                            className='w-full mb-2'
+                            placeholder='Chọn thông tin cần ẩn'
+                            mode="multiple"
+                            options={[
+                                {
+                                    label: 'Lợi ích từ khóa học',
+                                    value: 'benefit'
+                                },
+                                {
+                                    label: 'Yêu cầu khóa học',
+                                    value: 'prerequisite'
+                                },
+                                {
+                                    label: 'Đối tượng khách hàng',
+                                    value: 'customer'
+                                },
+                                {
+                                    label: 'Tiêu chí đầu ra',
+                                    value: 'output'
+                                },
+                                {
+                                    label: 'Nội dung khóa học',
+                                    value: 'module'
+                                },
+                                {
+                                    label: 'Đánh giá từ học viên',
+                                    value: 'review'
+                                },
+                            ]}
                         />
                     </Form.Item>
 
@@ -583,7 +654,7 @@ const Courses = () => {
                             >
                                 <Select
                                     options={
-                                        categories.map(item => ({
+                                        categories?.map(item => ({
                                             label: item.category,
                                             value: item._id
                                         }))

@@ -12,7 +12,7 @@ const courseUserSlice = genericSlice({
         loading: true,
         error: false,
     },
-    getApi: getCourseUserApi,
+    getApi: [getCourseUserApi],
 });
 
 export default courseUserSlice.reducer;

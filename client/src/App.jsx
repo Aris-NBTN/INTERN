@@ -20,7 +20,6 @@ import PrivateRoute from "~/routes/PrivateRoute";
 import PublicRoute from "~/routes/PublicRoute";
 
 // Loading
-import SkeletonAdmin from '~/components/loading/SkeletonAdmin';
 import SkeletonPublic from '~/components/loading/SkeletonPublic';
 
 // Logout
@@ -34,12 +33,11 @@ const CoursesPublic = lazy(() => import('Public/Courses/Courses'));
 const CoursePublic = lazy(() => import('Public/Course/Course'));
 const CheckOut = lazy(() => import('Public/CheckOut/CheckOut'));
 const Payment = lazy(() => import('Public/Payment/Payment'));
-const TestPublic = lazy(() => import('Public/Test/Test'));
 const Success = lazy(() => import('Public/Status/Success'));
 const Cancel = lazy(() => import('Public/Status/Cancel'));
 
 // Admin
-const Dashboard = lazy(() => import('~/pages/admin/DashBoard/Dashboard'));
+const Dashboard = lazy(() => import('Admin/DashBoard/DashBoard'));
 const Info = lazy(() => import('Admin/Info/Info'));
 const Users = lazy(() => import('Admin/Users/Users'));
 const Courses = lazy(() => import('Admin/Courses/Courses'));
@@ -51,9 +49,14 @@ const Layout = lazy(() => import('Admin/Layout/Layout'));
 const Pages = lazy(() => import('Admin/Pages/Pages'));
 const Page = lazy(() => import('Admin/Page/Page'));
 const Menu = lazy(() => import('Admin/Menu/Menu'));
-const EmailPage = lazy(() => import('Admin/Email/Email'));
+const Emails = lazy(() => import('Admin/Emails/Emails'));
+const Email = lazy(() => import('Admin/Email/Email'));
 const Plugins = lazy(() => import('Admin/Plugins/Plugins'));
 const Data = lazy(() => import('Admin/Data/Data'));
+const Setting = lazy(() => import('Admin/Setting/Setting'));
+const Contacts = lazy(() => import('Admin/Contacts/Contacts'));
+const PagePublic = lazy(() => import('Admin/PageCourse/PageCourse'));
+const Notification = lazy(() => import('Admin/Notification/Notification'));
 
 // Custom
 const Masonry = lazy(() => import('~/components/grapeJs/Custom/Block/Masonry/Masonry'));
@@ -141,7 +144,7 @@ function App() {
 
         <FloatButton.BackTop duration={700} visibilityHeight={100} style={{ right: 25, bottom: 70, zIndex: 4 }} />
 
-        <Suspense fallback={isAdminRoute(location.pathname) ? <SkeletonAdmin /> : <SkeletonPublic />}>
+        <Suspense fallback={<SkeletonPublic />}>
           <Routes>
 
             {/* Publish */}
@@ -155,7 +158,6 @@ function App() {
               <Route path="checkout" element={<CheckOut />} />
               <Route path="payment" element={<Payment />} />
               <Route path="logout" element={<LogoutPage />} />
-              <Route path="test" element={<TestPublic />} />
               <Route path="success" element={<Success />} />
               <Route path="cancel" element={<Cancel />} />
             </Route>
@@ -168,7 +170,8 @@ function App() {
             <Route path="/admin" element={<PrivateRoute requiredPermission={[TYPE_EMPLOYEE.admin]} />}>
               <Route path="" element={<Dashboard />} />
               <Route path="menu" element={<Menu />} />
-              <Route path="email" element={<EmailPage />} />
+              <Route path="emails" element={<Emails />} />
+              <Route path="email/:id" element={<Email />} />
               <Route path="info" element={<Info />} />
               <Route path="users" element={<Users />} />
               <Route path="courses" element={<Courses />} />
@@ -182,6 +185,10 @@ function App() {
               <Route path="pages" element={<Pages />} />
               <Route path="page/:slug" element={<Page />} />
               <Route path="test" element={<Test />} />
+              <Route path="notification" element={<Notification />} />
+              <Route path="setting" element={<Setting />} />
+              <Route path="contacts" element={<Contacts />} />
+              <Route path="course/:id/page/:childId" element={<PagePublic />} />
 
               <Route path="page-custom/masonry/:slug" element={<Masonry />} />
             </Route>

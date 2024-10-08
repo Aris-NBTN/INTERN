@@ -20,31 +20,29 @@ const DashBoard = () => {
     const dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
 
     useEffect(() => {
-        if (loading === true) {
+        if (loading) {
             dispatch(getRevenueApi());
         }
     }, []);
 
     return (
-        <LayoutAdmin header='TRANG CHỦ'>
-            <Row gutter={[18, 18]} className='overflow-hidden'>
+        <LayoutAdmin title={'Trang chủ'} header='TRANG CHỦ'>
+            <Row gutter={[24, 24]} className='overflow-hidden'>
                 <Col span={24} sm={{ span: 12 }} xl={{ span: 6 }} >
                     <Card
                         loading={loading}
-                        className='ant-card-pro'
+                        className='ant-card-pro h-full'
                         title=
-                        <>
+                        <div className='flex justify-between items-center'>
                             <Typography.Title level={4} className='!mb-0'>Tổng Doanh Thu</Typography.Title>
-                            <div className="me-3 absolute" style={{ top: "10px", right: "10px" }}>
-                                <Avatar
-                                    style={{
-                                        backgroundColor: colorPrimary,
-                                    }}
-                                >
-                                    <FaRegChartBar size={20} />
-                                </Avatar>
-                            </div>
-                        </>
+                            <Avatar
+                                style={{
+                                    backgroundColor: colorPrimary,
+                                }}
+                                icon={<FaRegChartBar />}
+                            >
+                            </Avatar>
+                        </div>
                         bordered={false}
                     >
                         <Typography.Title className='fw-bold' level={2}>{FormatPrice(revenue?.revenue?.totalRevenueAllTime)}</Typography.Title>
@@ -55,9 +53,8 @@ const DashBoard = () => {
                             <div className="flex items-center gap-2">
                                 <Typography.Text className="flex items-center gap-2 !mt-0" type='success'>
                                     {revenue?.revenue?.revenueDifference > 0 ? (
-                                        <> + {FormatPrice(revenue?.revenue?.revenueDifference)}</>
+                                        <> + {FormatPrice(revenue?.revenue?.revenueDifference)} <FaArrowUp size={16} /></>
                                     ) : (<></>)}
-                                    <FaArrowUp size={16} />
                                 </Typography.Text>
                             </div>
                         </div>
@@ -67,18 +64,17 @@ const DashBoard = () => {
                 <Col span={24} sm={{ span: 12 }} xl={{ span: 6 }} >
                     <Card
                         loading={loading}
-                        className='ant-card-pro'
+                        className='ant-card-pro h-full'
                         title=
                         <>
-                            <Typography.Title level={4} className='!mb-0'>Tổng Đơn Đặt Hàng</Typography.Title>
-                            <h5 className='m-0'></h5>
-                            <div className="me-3 absolute" style={{ top: "10px", right: "10px" }}>
+                            <div className='flex justify-between items-center'>
+                                <Typography.Title level={4} className='!mb-0'>Tổng Đơn Đặt Hàng</Typography.Title>
                                 <Avatar
                                     style={{
                                         backgroundColor: colorPrimary,
                                     }}
+                                    icon={<FaCartShopping />}
                                 >
-                                    <FaCartShopping size={20} />
                                 </Avatar>
                             </div>
                         </>
@@ -100,13 +96,6 @@ const DashBoard = () => {
                                 </>
                             ) : (
                                 <>
-
-                                    <div className="flex items-center gap-2">
-                                        <Typography.Text className="flex items-center gap-2 !mt-0" type='danger'>
-                                            + 100.000 VNĐ
-                                            <FaArrowUp size={16} />
-                                        </Typography.Text>
-                                    </div>
                                 </>
                             )}
                         </div>
@@ -116,18 +105,17 @@ const DashBoard = () => {
                 <Col span={24} sm={{ span: 12 }} xl={{ span: 6 }} >
                     <Card
                         loading={loading}
-                        className='ant-card-pro'
+                        className='ant-card-pro h-full'
                         title=
                         <>
-                            <Typography.Title level={4} className='!mb-0'>Truy Cập Website</Typography.Title>
-                            <h5 className='m-0'></h5>
-                            <div className="me-3 absolute" style={{ top: "10px", right: "10px" }}>
+                            <div className='flex justify-between items-center'>
+                                <Typography.Title level={4} className='!mb-0'>Truy Cập Website</Typography.Title>
                                 <Avatar
                                     style={{
                                         backgroundColor: colorPrimary,
                                     }}
+                                    icon={<FaEye />}
                                 >
-                                    <FaEye size={20} />
                                 </Avatar>
                             </div>
                         </>
@@ -150,17 +138,17 @@ const DashBoard = () => {
                 <Col span={24} sm={{ span: 12 }} xl={{ span: 6 }} >
                     <Card
                         loading={loading}
-                        className='ant-card-pro'
+                        className='ant-card-pro h-full'
                         title=
                         <>
-                            <Typography.Title level={4} className='!mb-0'>Người Dùng</Typography.Title>
-                            <div className="me-3 absolute" style={{ top: "10px", right: "10px" }}>
+                            <div className='flex justify-between items-center'>
+                                <Typography.Title level={4} className='!mb-0'>Người Dùng</Typography.Title>
                                 <Avatar
                                     style={{
                                         backgroundColor: colorPrimary,
                                     }}
+                                    icon={<FaUser />}
                                 >
-                                    <FaUser size={20} />
                                 </Avatar>
                             </div>
                         </>
@@ -170,23 +158,17 @@ const DashBoard = () => {
                         <Typography.Title level={5} className='!mb-0'>Tổng người dùng tuần này</Typography.Title>
                         <div className="flex justify-between">
                             <Typography.Title level={4} type='danger' className='!my-2'>{revenue?.users?.totalUsersThisWeek} Người dùng</Typography.Title>
-                            {revenue?.users?.totalUsersThisWeek > 0 ? (
+                            {revenue?.users?.userDifference > 0 ? (
                                 <>
                                     <div className="flex items-center gap-2">
                                         <Typography.Text className="flex items-center gap-2 !mt-0" type='success'>
-                                            + {revenue?.users?.userDifference}
+                                            + {revenue?.users?.userDifference} Người dùng
                                             <FaArrowUp size={16} />
                                         </Typography.Text>
                                     </div>
                                 </>
                             ) : (
                                 <>
-                                    <div className="flex items-center gap-2">
-                                        <Typography.Text className="flex items-center gap-2 !mt-0" type='danger'>
-                                            + {revenue?.users?.userDifference}
-                                            <FaArrowUp size={16} />
-                                        </Typography.Text>
-                                    </div>
                                 </>
                             )}
                         </div>
@@ -194,14 +176,13 @@ const DashBoard = () => {
                 </Col>
 
                 <Col span={24} lg={{ span: 12 }}>
-                    <Card loading={loading} title=<Typography.Title level={3} className='!mb-0'>Hôm Nay</Typography.Title> bordered={false} >
+                    <Card loading={loading} title=<Typography.Title level={4} className='!mb-0'>Hôm Nay</Typography.Title> bordered={false} >
                         <div style={{ height: 500 }}>
                             <RevenueDay
                                 data={[
                                     { value: revenue?.orders?.totalOrdersToday, name: 'Tổng đơn đặt hàng' },
                                     { value: revenue?.orders?.totalOrdersTodayWithFalseStatus, name: 'Tổng đơn đặt hàng chưa thanh toán' },
                                     { value: revenue?.orders?.totalOrdersTodayWithTrueStatus, name: 'Tổng đơn đặt hàng đã thanh toán' },
-                                    // { value: 0, name: 'Lượng truy cập người dùng' },
                                 ]}
                             />
                         </div>
@@ -211,7 +192,7 @@ const DashBoard = () => {
                 <Col span={24} lg={{ span: 12 }}>
                     <Card
                         loading={loading}
-                        title=<Typography.Title level={3} className='!mb-0'>Doanh Thu Theo Tuần</Typography.Title>
+                        title=<Typography.Title level={4} className='!mb-0'>Doanh Thu Theo Tuần</Typography.Title>
                         bordered={false}
                     >
                         <div style={{ height: 500 }}>
@@ -229,7 +210,7 @@ const DashBoard = () => {
                     <Card
                         loading={loading}
                         className='!mb-6'
-                        title=<Typography.Title level={3} className='!mb-0'>Doanh Thu Hằng Tháng</Typography.Title>
+                        title=<Typography.Title level={4} className='!mb-0'>Doanh Thu Hằng Tháng</Typography.Title>
                         bordered={false}
                     >
                         <RevenueMonth

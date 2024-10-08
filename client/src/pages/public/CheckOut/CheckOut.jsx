@@ -1,4 +1,4 @@
-import { AutoComplete, Button, Card, Col, Divider, Empty, Form, Input, Modal, Row, Tabs, Typography } from 'antd'
+import { AutoComplete, Button, Card, Col, Divider, Empty, Form, Input, Modal, Row, Tabs, theme, Typography } from 'antd'
 import { useEffect, useState } from 'react'
 import Layout from '~/components/layout/Public/Layout';
 
@@ -9,24 +9,27 @@ import vnpay from '~/assets/logo/vnpay.png'
 import vietqr from '~/assets/logo/vietqr.png'
 
 import { paymentApi } from '~/apis/paymentApi'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import { toastError, toastLoading } from '~/components/toast';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import useCartPrices from '~/hooks/Cart';
 import { FormatPrice } from '~/components/table/Format';
 import { orderApi } from '~/apis/orderApi';
+import { getInfoApi } from '~/redux/slices/Data/infoSlice';
+import { keyBankApi } from '~/apis/keyBankApi';
 
 const Payment = () => {
     const navigate = useNavigate();
-    const user = useSelector((state) => state.auth?.user);
-    const [formInfo] = Form.useForm()
-    // const [province, setProvince] = useState([])
-    // const [district, setDistrict] = useState([])
-    // const [ward, setWard] = useState([])
+    const dispatch = useDispatch();
 
+    const [formInfo] = Form.useForm()
+
+    const user = useSelector((state) => state.auth?.user);
+    const { info, loading } = useSelector(state => state.info);
+
+    const [keyBank, setKeyBank] = useState('')
     const [emails, setEmails] = useState([]);
     const [openConfirm, setOpenConfirm] = useState(false);
-
     const { carts, total } = useCartPrices();
 
     const handleSearch = (value) => {
@@ -100,6 +103,18 @@ const Payment = () => {
 
     useEffect(() => {
         fetchProvince();
+    }, [])
+
+    useEffect(() => {
+        if (loading) {
+            dispatch(getInfoApi());
+        }
+    }, []);
+
+    useEffect(() => {
+        keyBankApi.get().then(res => {
+            setKeyBank(res[0])
+        })
     }, [])
 
     useEffect(() => {
@@ -275,11 +290,30 @@ const Payment = () => {
                             </div>
                             <Divider style={{ borderColor: 'rgb(212 212 212)' }}>Phương thức thanh toán</Divider>
                             <Tabs
-                                defaultActiveKey="1"
+                                defaultActiveKey="BankAccount"
                                 centered
                                 type="card"
                                 items={
                                     [
+                                        {
+                                            key: 'BankAccount',
+                                            label: 'Tài khoản ngân hàng',
+                                            children:
+                                                <>
+                                                    <div className="radio-inputs">
+                                                        <label>
+                                                            <input className="radio-input" type="radio" name="engine" />
+                                                            <span className="radio-tile">
+                                                                <span className="radio-icon">
+                                                                    <img src={vietqr} alt="Thanh toán khóa học Chicken War Studio thông qua Zalopay" />
+                                                                </span>
+                                                                <span className="radio-label">VietQR</span>
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                </>
+                                            ,
+                                        },
                                         {
                                             key: 'ElectronicWallet',
                                             label: 'Ví điện tử',
@@ -317,25 +351,6 @@ const Payment = () => {
                                                 </div>
                                             ,
                                         },
-                                        {
-                                            key: 'BankAccount',
-                                            label: 'Tài khoản ngân hàng',
-                                            children:
-                                                <>
-                                                    <div className="radio-inputs">
-                                                        <label>
-                                                            <input className="radio-input" type="radio" name="engine" />
-                                                            <span className="radio-tile">
-                                                                <span className="radio-icon">
-                                                                    <img src={vietqr} alt="Thanh toán khóa học Chicken War Studio thông qua Zalopay" />
-                                                                </span>
-                                                                <span className="radio-label">VietQR</span>
-                                                            </span>
-                                                        </label>
-                                                    </div>
-                                                </>
-                                            ,
-                                        },
                                     ]
                                 }
                             />
@@ -362,10 +377,47 @@ const Payment = () => {
                     setOpenConfirm(false);
                     formInfo.submit();
                 }}
+                okText='Thanh toán'
                 onCancel={() => setOpenConfirm(false)}
-                width={1000}
+                width={800}
             >
-                <Typography>Vui lòng kiểm tra xem đúng số tài khoản! </Typography>
+                <Typography className='!mb-3'>Trước khi thanh toán vui lòng xác nhận lại <span ><Typography.Link>đơn hàng </Typography.Link></span> và <span><Typography.Link>tài khoản nhận tiền</Typography.Link></span> của {info[0]?.name}:  </Typography>
+
+                <Divider className='!mt-2' style={{ borderColor: 'rgb(212 212 212)' }}>Đơn hàng của bạn</Divider>
+                <div className="flex flex-col justify-between">
+                    {carts.length > 0 ? (
+                        <>
+                            {carts.map((item, index) => (
+                                <div key={index} className="flex justify-between w-full mb-2">
+                                    <Typography.Text>{item.name}</Typography.Text>
+                                    <Typography.Text type='danger' strong>{FormatPrice(item.price)}</Typography.Text>
+                                </div>
+                            ))}
+                        </>
+                    ) : (
+                        <Empty description='Chưa có khóa học nào trong giỏ hàng' />
+                    )}
+                </div>
+
+                <Divider style={{ borderColor: 'rgb(212 212 212)' }}>Tổng cộng</Divider>
+                <div className="flex justify-center">
+                    <Typography.Title className='!my-0 !text-center' level={4} type='danger'>{FormatPrice(total)}</Typography.Title>
+                </div>
+
+                <Divider style={{ borderColor: 'rgb(212 212 212)' }}>Phương thức thanh toán</Divider>
+                <div className="flex justify-center">
+                    <Typography.Link className='!my-0 !text-center' level={4}>Chuyển khoản ngân hàng</Typography.Link>
+                </div>
+
+                <Divider style={{ borderColor: 'rgb(212 212 212)' }}>Thông tin tài khoản nhận tiền của <span><Typography.Link>{info[0]?.name}</Typography.Link></span></Divider>
+                <Typography.Title className='!my-3' level={5}>Tên Ngân Hàng:  <span><Typography.Link>{keyBank?.name}</Typography.Link></span> </Typography.Title>
+                <Typography.Title className='!my-3' level={5}>Tên Tài Khoản: <span><Typography.Link>{keyBank?.nameAccount} </Typography.Link> </span> </Typography.Title>
+                <Typography.Title className='!my-3' level={5}>Số Tài Khoản: <span><Typography.Link>{keyBank?.account} </Typography.Link></span> </Typography.Title>
+                <Typography.Title level={5} type='danger' className='!my-3 text-end'>Không biết thanh toán?
+                    <span>
+                        <NavLink to='/huong-dan-thanh-toan'>Hướng dẫn!</NavLink>
+                    </span>
+                </Typography.Title>
             </Modal>
         </Layout>
     )

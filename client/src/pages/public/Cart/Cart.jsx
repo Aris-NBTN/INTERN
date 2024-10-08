@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from 'react'
-import { Typography, Divider, Empty, Row, Col, Spin, theme } from 'antd';
+import { Typography, Divider, Empty, Row, Col, Spin, theme, Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -22,10 +22,11 @@ const Cart = () => {
   const { outstand, loading: loadingOutstand } = useSelector((state) => state.outstand);
   const user = useSelector((state) => state.auth?.user);
   const { carts, estimated, total, discountedTotal, loading } = useCartData();
+  const { cart } = useSelector((state) => state.cart);
 
   useEffect(() => {
     if (loadingOutstand) {
-      dispatch(getCourseOutstandApi())
+      dispatch(getCourseOutstandApi({ ids: cart }))
     }
   }, []);
 
@@ -139,12 +140,7 @@ const Cart = () => {
               ) : (
                 user.userType === "user" ? (
                   <>
-                    <button
-                      className="checkout-button"
-                      onClick={() => navigate("/checkout")}
-                    >
-                      Tiến Hành Thanh Toán
-                    </button>
+                    <Button type='primary' size='large' onClick={() => navigate("/checkout")}>Tiến Hành Thanh Toán</Button>
                   </>
                 ) : (
                   <>

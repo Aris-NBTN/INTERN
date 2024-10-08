@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Avatar, Drawer, Dropdown, Menu, theme, Typography } from 'antd';
+import { Avatar, Drawer, Menu, theme } from 'antd';
 
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { useDispatch, useSelector } from 'react-redux';
@@ -7,23 +7,21 @@ import { fetchMenu } from '~/redux/slices/menuSlice';
 
 import './Layout.css';
 import 'animate.css';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { FaMailBulk, FaPhoneAlt, FaTachometerAlt } from 'react-icons/fa';
-import { FaLocationDot, FaUser, FaYoutube } from 'react-icons/fa6';
+import { useNavigate } from 'react-router-dom';
+import { FaMailBulk, FaPhoneAlt } from 'react-icons/fa';
+import { FaLocationDot } from 'react-icons/fa6';
 import { createRoot } from 'react-dom/client';
-import { PiIdentificationCardFill } from 'react-icons/pi';
-import { RiLockPasswordFill } from 'react-icons/ri';
+import { getInfoApi } from '~/redux/slices/Data/infoSlice';
 
 const LayoutPublic = ({
-    title = "Chicken War Studio",
-    description = "Chicken War Studio",
-    keywords = "3D",
-    author = "Chicken War Studio",
+    title,
+    description,
+    keywords,
+    author,
     ldJson = {},
     children
 }) => {
     const navigate = useNavigate();
-    const { pathname } = useLocation();
     const dispatch = useDispatch();
     const { token: { colorPrimary } } = theme.useToken();
 
@@ -33,60 +31,76 @@ const LayoutPublic = ({
     const menuItems = useSelector((state) => state.menu);
     const menuStatus = useSelector((state) => state.menu.status);
     const { user } = useSelector((state) => state.auth);
+    const { info, loading } = useSelector(state => state.info);
 
     const menuMobile = (data) => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(data, 'text/html');
+        try {
+            if (!data) return [];
 
-        const menuItems = [];
-        const mainMenuItems = doc.querySelectorAll('.nav__menu > ul > li');
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data, 'text/html');
 
-        mainMenuItems.forEach(mainItem => {
-            const mainLink = mainItem.querySelector('.nav__link > a');
-            const mainMenuData = {
-                key: mainLink.getAttribute('href'),
-                label: mainLink.textContent.trim(),
-            };
+            const menuItems = [];
+            const mainMenuItems = doc.querySelectorAll('.nav__menu > ul > li');
 
-            // Lấy menu con
-            const subMenuItems = mainItem.querySelectorAll('.dropdown__menu.dropdown-aris > li');
+            mainMenuItems.forEach(mainItem => {
+                if (!mainItem) return;
 
-            const children = [];
+                const mainLink = mainItem.querySelector('.nav__link > a');
+                if (!mainLink) return;
 
-            subMenuItems.forEach(subItem => {
-                const subLink = subItem.querySelector('.dropdown__link > h4 > a');
-                const childMenuData = {
-                    key: subLink.getAttribute('href'),
-                    label: subLink.textContent.trim(),
-                    children: []
+                const mainMenuData = {
+                    key: mainLink.getAttribute('href') || '#',
+                    label: mainLink.textContent?.trim() || '',
                 };
 
-                // Lấy menu con cấp hai (nếu có)
-                const subSubMenuItems = subItem.querySelectorAll('.dropdown__submenu.dropdown-aris > li > a');
-                subSubMenuItems.forEach(subSubItem => {
-                    childMenuData.children.push({
-                        key: subSubItem.getAttribute('href'),
-                        label: subSubItem.textContent.trim(),
+                const subMenuItems = mainItem.querySelectorAll('.dropdown__menu.dropdown-aris > li');
+                const children = [];
+
+                subMenuItems.forEach(subItem => {
+                    if (!subItem) return;
+
+                    const subLink = subItem.querySelector('.dropdown__link > h4 > a');
+                    if (!subLink) return;
+
+                    const childMenuData = {
+                        key: subLink.getAttribute('href') || '#',
+                        label: subLink.textContent?.trim() || '',
+                        children: []
+                    };
+
+                    const subSubMenuItems = subItem.querySelectorAll('.dropdown__submenu.dropdown-aris > li > a');
+                    subSubMenuItems.forEach(subSubItem => {
+                        if (!subSubItem) return;
+
+                        childMenuData.children.push({
+                            key: subSubItem.getAttribute('href') || '#',
+                            label: subSubItem.textContent?.trim() || '',
+                        });
                     });
+
+                    if (childMenuData.children.length > 0) {
+                        children.push(childMenuData);
+                    } else {
+                        children.push({
+                            label: childMenuData.label,
+                            key: childMenuData.key
+                        });
+                    }
                 });
 
-                if (childMenuData.children.length > 0) {
-                    children.push(childMenuData);
-                } else {
-                    // Nếu không có children, chỉ thêm label và href
-                    children.push({ label: childMenuData.label, key: childMenuData.key });
+                if (children.length > 0) {
+                    mainMenuData.children = children;
                 }
+
+                menuItems.push(mainMenuData);
             });
 
-            // Chỉ thêm children nếu không rỗng
-            if (children.length > 0) {
-                mainMenuData.children = children;
-            }
-
-            menuItems.push(mainMenuData);
-        });
-
-        return menuItems;
+            return menuItems;
+        } catch (error) {
+            console.error('Error parsing menu:', error);
+            return [];
+        }
     };
 
     function getInitials(name) {
@@ -97,10 +111,6 @@ const LayoutPublic = ({
             .join("")
             .toUpperCase();
     }
-
-    useEffect(() => {
-        window.scrollTo(0, 0);
-    }, [pathname]);
 
     useEffect(() => {
         const handleLinkClick = (event) => {
@@ -150,91 +160,42 @@ const LayoutPublic = ({
 
     useEffect(() => {
         const userIcon = document.getElementById('icon-user');
-        if (user?.userType && userIcon && user?.userType != 'admin') {
+        if (user?.userType && userIcon) {
             userIcon.innerHTML = '';
             if (!rootRef.current) {
                 rootRef.current = createRoot(userIcon);
             }
             const root = rootRef.current;
 
-            const menuItems = [
-                {
-                    key: 'user',
-                    label: (
-                        <div className='flex items-center gap-1' onClick={() => navigate('/user')}>
-                            <FaTachometerAlt size={18} />
-                            <Typography.Text>Trang chủ</Typography.Text>
-                        </div>
-                    ),
-                },
-                {
-                    key: 'info',
-                    label: (
-                        <div className='flex items-center gap-1' onClick={() => navigate('/user/info')}>
-                            <FaUser size={18} />
-                            <Typography.Text>Thông tin cá nhân</Typography.Text>
-                        </div>
-                    ),
-                },
-                {
-                    key: 'courses',
-                    label: (
-                        <div className='flex items-center gap-1' onClick={() => navigate('/user/courses')}>
-                            <FaYoutube size={18} />
-                            <Typography.Text>Khóa học của tôi</Typography.Text>
-                        </div>
-                    ),
-                },
-                {
-                    key: 'orders',
-                    label: (
-                        <div className='flex items-center gap-1' onClick={() => navigate('/user/orders')}>
-                            <PiIdentificationCardFill size={18} />
-                            <Typography.Text>Lịch sử mua hàng</Typography.Text>
-                        </div>
-                    ),
-                },
-                {
-                    key: 'change-password',
-                    label: (
-                        <div className='flex items-center gap-1' onClick={() => navigate('/user/change-password')}>
-                            <RiLockPasswordFill size={18} />
-                            <Typography.Text>Đổi mật khẩu</Typography.Text>
-                        </div>
-                    ),
-                },
-            ];
-
             const renderAvatar = () => {
-                if (user?.src) {
-                    return <Avatar src={user?.src} size={40} />;
+                if (user?.avatar) {
+                    return <Avatar src={user?.avatar} size={40} />;
                 }
                 return (
-                    <Avatar style={{ backgroundColor: colorPrimary }} size={40}>
-                        {getInitials(user?.name)}
-                    </Avatar>
+                    <Avatar style={{ backgroundColor: colorPrimary }} size={40}> {getInitials(user?.name)} </Avatar>
                 );
             };
 
             root.render(
-                <Dropdown
-                    menu={{ items: menuItems }}
-                    placement="bottomRight"
-                    arrow={{ pointAtCenter: true }}
-                >
-                    {renderAvatar()}
-                </Dropdown>
+                <>  {renderAvatar()} </>
             );
         }
-    }, [user, menuItems]);
+    }, [user, menuItems, colorPrimary]);
+
+    useEffect(() => {
+        if (loading) {
+            dispatch(getInfoApi());
+        }
+    }, []);
 
     return (
         <HelmetProvider>
             <Helmet>
-                <meta name="description" content={description} />
-                <meta name="keywords" content={keywords} />
-                <meta name="author" content={author} />
-                <title>{title}</title>
+                <meta name="description" content={description || info[0]?.description} />
+                <meta name="keywords" content={keywords || info[0]?.keywords} />
+                <meta name="author" content={author || info[0]?.manage} />
+                <title>{title || info[0]?.name}</title>
+
                 {typeof ldJson === 'object' && Object.keys(ldJson).length > 0 && (
                     <script type="application/ld+json">{JSON.stringify(ldJson)}</script>
                 )}
@@ -254,13 +215,13 @@ const LayoutPublic = ({
                 </>
             )}
 
-            <div style={{ minHeight: 'calc(93vh - 6rem)' }}>
+            <div style={{ minHeight: '90dvh' }}>
                 {children}
             </div>
             <div dangerouslySetInnerHTML={{ __html: menuItems?.menuItems?.footer }} />
 
             <Drawer
-                title="Chicken War Studio"
+                title={info?.newData?.[0]?.name}
                 placement='left'
                 onClose={() => setOpen(false)}
                 open={open}
@@ -284,15 +245,15 @@ const LayoutPublic = ({
                     <div className="p-2">
                         <div className="flex items-center gap-2 my-2">
                             <FaMailBulk size={22} />
-                            {/* {inFo?.info?.email} */}
+                            {info?.newData?.[0]?.email}
                         </div>
                         <div className="flex items-center gap-2 my-2">
                             <FaPhoneAlt size={22} />
-                            {/* {inFo?.info?.phoneNumber} */}
+                            {info?.newData?.[0]?.phone}
                         </div>
                         <div className="flex items-center gap-2 my-2">
                             <FaLocationDot size={22} />
-                            {/* {inFo?.info?.address} */}
+                            {info?.newData?.[0]?.address}
                         </div>
                     </div>
                 </div>

@@ -1,22 +1,21 @@
 import { useEffect, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Button, Divider, Form, Input, Radio, theme, Typography } from "antd";
-
+import { Button, Divider, Form, Input, Modal, Radio, Steps, theme, Typography } from "antd";
 import Layout from "~/components/layout/Public/Layout";
-// import { jwtDecode } from 'jwt-decode';
-// import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
 
-import { baseURL } from "~/utils";
-import { toastSuccess } from "~/components/toast";
+import { baseURL, forgotPass } from "~/utils";
+import { toastError, toastLoading, toastSuccess } from "~/components/toast";
 import SkeletonPublic from "~/components/loading/SkeletonPublic";
-
-import {
-  loginAuth,
-  registerAuth,
-} from "~/redux/slices/authSlice";
+import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+import { loginAuth, loginGoogleAuth, registerAuth, } from "~/redux/slices/authSlice";
 
 import "./Login.css";
+import { IoIosSend } from "react-icons/io";
+import { emailApi } from "~/apis/emailAPi";
+import { userApi } from "~/apis/userApi";
+import { getInfoApi } from "~/redux/slices/Data/infoSlice";
 
 const Login = () => {
   const location = useLocation();
@@ -24,22 +23,39 @@ const Login = () => {
   const dispatch = useDispatch();
 
   const [formLog] = Form.useForm();
+  const [formLogGoogle] = Form.useForm();
   const [formReg] = Form.useForm();
   const [formForgot] = Form.useForm();
 
   const [loading, setLoading] = useState(true);
   const [isLogin, setIsLogin] = useState(true);
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
+
+  const [openForgot, setOpenForgot] = useState(false);
+  const [currentForgot, setCurrentForgot] = useState(0);
+  const [openFormAddUser, setOpenFormAddUser] = useState(false);
+
+  const [otp, setOtp] = useState();
+  const [passWord, setPassWord] = useState();
+  const [confirmPass, setConfirmPass] = useState()
+  const { info, loadingL: loadingInfo } = useSelector(state => state.info);
+
+  const { darkMode } = useSelector((state) => state.theme);
+
   const { user } = useSelector((state) => state.auth);
   const { token: { colorPrimary } } = theme.useToken();
 
   const navigateBased = (user) => {
     const from = location.state?.from;
+    toastSuccess(
+      "auth",
+      "Đăng nhập thành công!",
+      `Chào mừng bạn đến với ${info?.newData?.[0].name || "Chicken War Studio!"}`
+    );
+
     if (from) {
       navigate(from);
       return;
     }
-
     setTimeout(() => {
       switch (user?.userType) {
         case "admin":
@@ -49,27 +65,33 @@ const Login = () => {
           navigate("/user");
           break;
         default:
-          navigate("/");
+          // navigate("/");
           break;
       }
     }, 500);
   };
 
-  // const handleLoginGoogle = async (credentialResponse) => {
-  //     const { user } = await dispatch(loginGoogleAuth(jwtDecode(credentialResponse?.credential))).unwrap();
-  //     navigateBased(user);
-  //     toastSuccess('auth', "Đăng nhập thành công!", "Chào mừng bạn đến với Chicken War Studio!")
-  // };
-
   const handleLogin = async (values) => {
-    const { user } = await dispatch(loginAuth(values)).unwrap();
+    const user = await dispatch(loginAuth(values)).unwrap();
     navigateBased(user);
     formLog.resetFields();
-    toastSuccess(
-      "auth",
-      "Đăng nhập thành công!",
-      "Chào mừng bạn đến với Chicken War Studio!"
-    );
+  };
+
+  const handleCheckUser = async (credentialResponse) => {
+    const dataUser = jwtDecode(credentialResponse?.credential);
+    try {
+      toastLoading('auth', 'Đang xác thực tài khoản...');
+      const res = await userApi.checkEmail({ email: dataUser.email });
+      if (res.exists) {
+        const { user } = await dispatch(loginGoogleAuth({ email: dataUser.email, jtiNew: dataUser.jti, jti: res.jti })).unwrap();
+        navigateBased(user);
+      } else {
+        setOpenFormAddUser(true);
+        formLogGoogle.setFieldsValue({ email: dataUser.email, name: dataUser.name, jti: dataUser.jti, avatar: dataUser.picture });
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const handleReg = async (values) => {
@@ -78,23 +100,197 @@ const Login = () => {
     toastSuccess(
       "auth",
       "Đăng ký thành công!",
-      "Chào mừng bạn đến với Chicken War Studio!"
+      `Chào mừng bạn đến với ${info?.newData?.[0].name || "Chicken War Studio!"}`
     );
     navigate("/");
   };
 
   const handleForgotPassword = async (values) => {
-    console.log(values);
+    setOpenForgot(true);
+    const res = await userApi.checkEmail(values);
+    if (res.exists) {
+      setCurrentForgot(currentForgot + 1);
+      emailApi
+        .sig({ id: forgotPass })
+        .then((res) => {
+          emailApi.sendForgot({ email: values.email, title: "Mã xác nhận", content: res.content })
+        })
+    } else {
+      toastError('auth', 'Email không tồn tại!', 'Vui lòng kiểm tra lại email của bạn!');
+    }
   };
+
+  const handleOtp = () => {
+    userApi
+      .checkCode({ email: formForgot.getFieldValue('email'), verify: otp })
+      .then((res) => {
+        if (res.exists) {
+          setCurrentForgot(currentForgot + 1);
+        } else {
+          toastError('auth', 'Mã xác nhận không đúng!', 'Vui lòng kiểm tra lại mã xác nhận của bạn!');
+        }
+      })
+  };
+
+  const handleChangePass = () => {
+    const date = new Date();
+    toastLoading(date, 'Đang đổi mật khẩu');
+    if (passWord === confirmPass) {
+      userApi
+        .putUserForgot({ email: formForgot.getFieldValue('email'), password: passWord, verify: otp })
+        .then((res) => {
+          if (res) {
+            toastSuccess(date, 'Đổi mật khẩu thành công!', 'Hãy đăng nhập để trải nghiệm tốt nhất!');
+            setOpenForgot(false);
+          }
+        })
+    } else {
+      toastError(date, 'Mật khẩu không trùng khớp!', 'Vui lòng kiểm tra lại mật khẩu của bạn!');
+    }
+  };
+
+  const steps = [
+    {
+      key: '1',
+      title: 'Xác nhận thông tin',
+      content: <>
+        <Form
+          className="mt-4"
+          form={formForgot}
+          name="formForgotPass"
+          layout="vertical"
+          onFinish={handleForgotPassword}
+        >
+          <Form.Item
+            label="Email"
+            className="mb-4"
+            name="email"
+            validateFirst
+            rules={[
+              { required: true, message: "Vui lòng nhập email!" },
+              { type: "email", message: "Email không đúng định dạng!" },
+            ]}
+          >
+            <Input
+              size="large"
+              placeholder="Nhập email để lấy lại mật khẩu"
+            />
+          </Form.Item>
+        </Form>
+      </>,
+    },
+    {
+      key: '2',
+      title: 'Điền mã xác nhận',
+      content: <>
+
+        <Form
+          className="mt-4"
+          name="sdfsdfsdfsdfsdfsdf"
+          layout="vertical"
+          onFinish={handleOtp}
+        >
+          <Form.Item
+            label="Nhập mã xác nhận gửi về email bao gồm 6 chữ số"
+            className="mb-4 flex flex-col justify-center items-center flex-wrap"
+            name="otp"
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập mã xác nhận!",
+              },
+            ]}
+          >
+            <Input.OTP
+              onChange={(e) => setOtp(e)}
+              size="large"
+              placeholder="Nhập mã xác nhận"
+            />
+          </Form.Item>
+
+          <div className="flex justify-center gap-2">
+            <span>Không thấy mã <Button icon={<IoIosSend />} style={{ color: colorPrimary }} type="text">Gửi lại mã</Button></span>
+          </div>
+        </Form>
+      </>,
+    },
+    {
+      key: '3',
+      title: 'Đặt lại mật khẩu',
+      content: <>
+        <Form
+          className="mt-4"
+          name="adssdfsdfsdf"
+          layout="vertical"
+          onFinish={handleChangePass}
+        >
+          <Form.Item
+            label="Mật khẩu mới"
+            className="mb-4"
+            name="password"
+            validateFirst
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập mật khẩu!",
+              },
+              {
+                min: 8,
+                message: "Mật khẩu phải có ít nhất 8 ký tự!",
+              },
+              {
+                pattern: /[!@#$%^&*(),.?":{}|<>]/,
+                message: "Mật khẩu phải có ít nhất một ký tự đặc biệt!",
+              },
+            ]}
+          >
+            <Input.Password
+              size="large"
+              placeholder="Nhập mật khẩu mới"
+              onChange={(e) => setPassWord(e.target.value)}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="Xác nhận mật khẩu mới"
+            className="mb-4"
+            name="confirmPassword"
+            validateFirst
+            rules={[
+              {
+                required: true,
+                message: "Vui lòng nhập mật khẩu!",
+              },
+              {
+                min: 8,
+                message: "Mật khẩu phải có ít nhất 8 ký tự!",
+              },
+              {
+                pattern: /[!@#$%^&*(),.?":{}|<>]/,
+                message: "Mật khẩu phải có ít nhất một ký tự đặc biệt!",
+              },
+            ]}
+          >
+            <Input.Password
+              size="large"
+              placeholder="Nhập mật khẩu mới"
+              onChange={(e) => setConfirmPass(e.target.value)}
+            />
+          </Form.Item>
+        </Form>
+      </>,
+    },
+  ];
+
+  useEffect(() => {
+    if (loading) {
+      dispatch(getInfoApi());
+    }
+  }, []);
 
   useEffect(() => {
     if (user && Object.keys(user).length > 0) {
       if (user.userType === 'user') {
-        toastSuccess(
-          "auth",
-          "Chào mừng bạn trở lại!",
-          "Hãy học tập thật vui vẽ!"
-        );
         navigate("/user");
       } else {
         navigate("/admin");
@@ -102,7 +298,7 @@ const Login = () => {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [user, navigate]);
 
   return (
     <>
@@ -113,7 +309,7 @@ const Login = () => {
           <div
             className="aris"
             style={{
-              background: `url(https://images.pexels.com/photos/1525041/pexels-photo-1525041.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1)`,
+              background: `url(https://media.istockphoto.com/id/1283852667/vi/anh/ch%E1%BA%A1m-v%C3%A0o-r%C3%AAu-t%C6%B0%C6%A1i-trong-r%E1%BB%ABng.jpg?s=612x612&w=0&k=20&c=1NAbpO5PSxYA4FzHdRrd4zODtLni9pzNUtwx3zHYfwU=)`,
               backgroundPosition: "center",
               backgroundSize: "cover",
               backgroundAttachment: "fixed",
@@ -122,16 +318,15 @@ const Login = () => {
               alignItems: "center",
               justifyContent: "center",
               minHeight: "100dvh",
-              padding: "0 20px",
+              padding: "0 10px",
             }}
           >
             <div className="form-containet">
               <div
                 className="col col-login-1"
                 style={{
-                  borderRadius: isForgotPassword
-                    ? "0 35% 20% 0"
-                    : isLogin
+                  borderRadius:
+                    isLogin
                       ? "0 25% 25% 0"
                       : "0 20% 35% 0",
                 }}
@@ -143,16 +338,18 @@ const Login = () => {
                     className="form-image-main fi-2"
                   />
                 </div>
-                <p className="featured-words">
-                  Created By <span> Aris </span> <br /> All Rights Reserved
-                </p>
+
+                <Typography.Title className="featured-words" level={5}> Created By
+                  <Typography.Link className="ms-1">Aris</Typography.Link>
+                  <br /> All Rights Reserved
+                </Typography.Title>
               </div>
 
               <div className="col col-login-2">
                 <div
                   className="login-form"
                   style={{
-                    opacity: isLogin && !isForgotPassword ? "1" : "0",
+                    opacity: isLogin ? "1" : "0",
                     height: "100%",
                   }}
                 >
@@ -169,11 +366,10 @@ const Login = () => {
                         label="Email"
                         className="mb-2"
                         name="name"
+                        validateFirst
                         rules={[
-                          {
-                            required: true,
-                            message: "Vui lòng nhập tên hoặc email!",
-                          },
+                          { required: true, message: "Vui lòng nhập email!" },
+                          { type: "email", message: "Email không đúng định dạng!" },
                         ]}
                       >
                         <Input
@@ -187,8 +383,20 @@ const Login = () => {
                         label="Mật khẩu"
                         className="mb-2"
                         name="password"
+                        validateFirst
                         rules={[
-                          { required: true, message: "Vui lòng nhập mật khẩu!" },
+                          {
+                            required: true,
+                            message: "Vui lòng nhập mật khẩu!",
+                          },
+                          {
+                            min: 8,
+                            message: "Mật khẩu phải có ít nhất 8 ký tự!",
+                          },
+                          {
+                            pattern: /[!@#$%^&*(),.?":{}|<>]/,
+                            message: "Mật khẩu phải có ít nhất một ký tự đặc biệt!",
+                          },
                         ]}
                       >
                         <Input.Password
@@ -199,7 +407,7 @@ const Login = () => {
                       </Form.Item>
                     </Form>
 
-                    <div className="forget-pass my-3">
+                    <div className="forget-pass my-2">
                       <Typography.Text>
                         Chưa có tài khoản?
                         <span onClick={() => setIsLogin(false)}>
@@ -207,23 +415,27 @@ const Login = () => {
                         </span>
                       </Typography.Text>
 
-                      <Typography.Link onClick={() => setIsForgotPassword(true)} className="ms-2">Quên mật khẩu ?</Typography.Link>
+                      <Typography.Link onClick={() => setOpenForgot(true)} className="ms-2">Quên mật khẩu ?</Typography.Link>
                     </div>
 
-                    <Button size='large' type="primary" className="w-full !mt-4" onClick={() => formLog.submit()} style={{ height: 50 }}>
+                    <Button size='large' type="primary" className="w-full !mt-2" onClick={() => formLog.submit()} style={{ height: 50 }}>
                       <Typography.Title level={5} className="!mb-0">ĐĂNG NHẬP</Typography.Title>
                     </Button>
-                    {/* <Divider plain>Hoặc</Divider> */}
+                    <Divider plain>Hoặc</Divider>
 
-                    <div className="flex justify-center">
-                      {/* <GoogleOAuthProvider clientId={inFo?.info?.googleClient || "1081420444654-nndjnesm34tv786257nhgtd5jnc4gns3.apps.googleusercontent.com"}>
-                                    <GoogleLogin
-                                        onSuccess={handleLoginGoogle}
-                                        onError={() => {
-                                            console.log('Login Failed');
-                                        }}
-                                    />
-                                </GoogleOAuthProvider> */}
+                    <div className="flex justify-center items-center">
+                      <GoogleOAuthProvider clientId={"1081420444654-nndjnesm34tv786257nhgtd5jnc4gns3.apps.googleusercontent.com"}>
+                        <GoogleLogin
+                          size="large"
+                          theme={darkMode ? 'filled_black' : 'filled_white'}
+                          shape="rectangular"
+                          width={300}
+                          onSuccess={handleCheckUser}
+                          onError={() => {
+                            console.log('Login Failed');
+                          }}
+                        />
+                      </GoogleOAuthProvider>
                     </div>
                   </div>
                 </div>
@@ -235,7 +447,7 @@ const Login = () => {
                     opacity: isLogin ? "0" : "1",
                   }}
                 >
-                  <Typography.Title className="my-2" level={2} style={{ color: colorPrimary }}> ĐĂNG KÝ</Typography.Title>
+                  <Typography.Title className="!mb-0" level={2} style={{ color: colorPrimary }}> ĐĂNG KÝ</Typography.Title>
                   <div className="form-inputs">
                     <Form
                       form={formReg}
@@ -258,6 +470,7 @@ const Login = () => {
                         label="Email"
                         className="my-2"
                         name="email"
+                        validateFirst
                         rules={[
                           { required: true, message: "Vui lòng nhập email!" },
                           { type: "email", message: "Email không đúng định dạng!" },
@@ -270,14 +483,19 @@ const Login = () => {
                         label="Số điện thoại"
                         className="my-2"
                         name="phone"
+                        validateFirst
                         rules={[
                           {
                             required: true,
                             message: "Vui lòng nhập số điện thoại!",
                           },
                           {
-                            pattern: /^0\d{9}$/,
-                            message: "Số điện thoại phải có đúng 10 chữ số!",
+                            pattern: /^0/,
+                            message: "Số điện thoại phải bắt đầu bằng số 0!",
+                          },
+                          {
+                            len: 10,
+                            message: "Số điện thoại phải có đúng 10 số!",
                           },
                         ]}
                       >
@@ -288,8 +506,20 @@ const Login = () => {
                         label="Mật khẩu"
                         className="my-2"
                         name="password"
+                        validateFirst
                         rules={[
-                          { required: true, message: "Vui lòng nhập mật khẩu!" },
+                          {
+                            required: true,
+                            message: "Vui lòng nhập mật khẩu!",
+                          },
+                          {
+                            min: 8,
+                            message: "Mật khẩu phải có ít nhất 8 ký tự!",
+                          },
+                          {
+                            pattern: /[!@#$%^&*(),.?":{}|<>]/,
+                            message: "Mật khẩu phải có ít nhất một ký tự đặc biệt!",
+                          },
                         ]}
                       >
                         <Input.Password size="large" placeholder="Nhập mật khẩu" />
@@ -297,12 +527,14 @@ const Login = () => {
 
                       <Form.Item
                         layout="horizontal"
-                        label="Giới tính"
-                        className="gt my-2"
+                        className="mt-2 !mb-0"
                         name="gender"
-                        rules={[{ required: true }]}
+                        rules={[
+                          { required: true, message: "Vui lòng chọn giới tính!" },
+                        ]}
                       >
-                        <div className="flex justify-end">
+                        <div className="flex justify-between">
+                          <Typography.Text>Giới tính:</Typography.Text>
                           <Radio.Group>
                             <Radio value="Nam">Nam</Radio>
                             <Radio value="Nữ">Nữ</Radio>
@@ -311,75 +543,199 @@ const Login = () => {
                       </Form.Item>
                     </Form>
 
-                    <Button size='large' type="primary" className="w-full" onClick={() => formReg.submit()} style={{ height: 50 }}>
+                    <Button size='large' type="primary" className="w-full mt-2" onClick={() => formReg.submit()} style={{ height: 50 }}>
                       <Typography.Title level={5} className="!mb-0">ĐĂNG KÝ</Typography.Title>
                     </Button>
-                    <Divider plain>Hoặc</Divider>
-                    <div className="forget-pass ad my-3">
-                      <div>
-                        <span onClick={() => setIsLogin(true)}>
-                          <NavLink className="mt-3 link-form" style={{ color: colorPrimary }}> Đăng Nhập</NavLink>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className="register-form"
-                  style={{
-                    left: isForgotPassword ? "50%" : "-50%",
-                    opacity: isForgotPassword ? "1" : "0",
-                  }}
-                >
-                  <Typography.Title className="mb-4" level={2} style={{ color: colorPrimary }}> QUÊN MẬT KHẨU</Typography.Title>
-                  <div className="form-inputs">
-                    <Form
-                      form={formForgot}
-                      name="forgotForm"
-                      layout="vertical"
-                      onFinish={handleForgotPassword}
-                    >
-                      <Form.Item
-                        label="Email"
-                        className="mb-4"
-                        name="email"
-                        rules={[
-                          {
-                            required: true,
-                            message: "Vui lòng nhập tên hoặc email!",
-                          },
-                        ]}
-                      >
-                        <Input
-                          size="large"
-                          placeholder="Nhập tên hoặc email để lấy lại mật khẩu"
-                        />
-                      </Form.Item>
-                    </Form>
-
-                    <Button size='large' type="primary" className="w-full" onClick={() => formForgot.submit()} style={{ height: 50 }}>
-                      <Typography.Title level={5} className="!mb-0">ĐẶT LẠI MẬT KHẨU</Typography.Title>
-                    </Button>
 
                     <Divider plain>Hoặc</Divider>
-                    <div className="forget-pass my-3 flex !justify-center">
-                      <NavLink
-                        style={{ color: colorPrimary }}
-                        onClick={() => {
-                          setIsForgotPassword(false);
-                          setIsLogin(true);
-                        }}
-                        className="link-form"
-                      >
-                        Đăng Nhập
-                      </NavLink>
+
+                    <div className="my-3 flex justify-center">
+                      <Button onClick={() => setIsLogin(true)} size="large" type="text">
+                        <Typography.Text className="!mb-0" style={{ color: colorPrimary }}> Đăng Nhập</Typography.Text>
+                      </Button>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
+          <Modal
+            title="Quên mật khẩu"
+            centered
+            open={openForgot}
+            onOk={() => setOpenForgot(false)}
+            onCancel={() => setOpenForgot(false)}
+            footer={null}
+            width={650}
+          >
+            <Steps current={currentForgot} items={steps} />
+            <div>{steps[currentForgot].content}</div>
+            <div
+              className="flex justify-end"
+              style={{
+                marginTop: 24,
+              }}
+            >
+
+              {currentForgot > 0 && (
+                <Button
+                  style={{
+                    margin: '0 8px',
+                  }}
+                  onClick={() => setCurrentForgot(currentForgot - 1)}
+                >
+                  Trở Lại
+                </Button>
+              )}
+
+              {currentForgot == 0 && (
+                <Button type="primary" onClick={() => formForgot.submit()}> Gửi Email Xác Nhận</Button>
+              )}
+
+              {currentForgot == 1 && (
+                <Button type="primary" onClick={handleOtp}>Xác Nhận</Button>
+              )}
+
+              {currentForgot === steps.length - 1 && (
+                <Button type="primary" onClick={handleChangePass}> Đặt Lại Mật Khẩu </Button>
+              )}
+            </div>
+          </Modal>
+
+          <Modal
+            title="Tạo Tài Khoản Mới"
+            maskClosable={false}
+            centered
+            open={openFormAddUser}
+            onOk={() => formLogGoogle.submit()}
+            onCancel={() => setOpenFormAddUser(false)}
+            width={600}
+          >
+            <Typography>Đây là lần đầu bạn đăng nhập nên hãy thêm mật khẩu và số điện thoại cho chúng tôi!</Typography>
+            <Form
+              className="mt-4"
+              form={formLogGoogle}
+              name="forgotForm"
+              layout="vertical"
+              onFinish={handleReg}
+            >
+              <Form.Item
+                className="my-2 hidden"
+                name="jti"
+              >
+                <Input size="large" />
+              </Form.Item>
+
+              <Form.Item
+                className="my-2 hidden"
+                name="avatar"
+              >
+                <Input size="large" />
+              </Form.Item>
+
+              <Form.Item
+                label="Họ và tên"
+                className="mb-4"
+                name="name"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng nhập tên!",
+                  },
+                ]}
+              >
+                <Input
+                  size="large"
+                  placeholder="Nhập tên"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Email"
+                className="mb-4"
+                name="email"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng email!",
+                  },
+                ]}
+              >
+                <Input
+                  size="large"
+                  readOnly={true}
+                  placeholder="Nhập tên hoặc email để lấy lại mật khẩu"
+                />
+              </Form.Item>
+
+              <Form.Item
+                label="Số điện thoại"
+                className="my-2"
+                name="phone"
+                validateFirst
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng nhập số điện thoại!",
+                  },
+                  {
+                    pattern: /^0/,
+                    message: "Số điện thoại phải bắt đầu bằng số 0!",
+                  },
+                  {
+                    len: 10,
+                    message: "Số điện thoại phải có đúng 10 số!",
+                  },
+                ]}
+              >
+                <Input size="large" placeholder="Nhập số điện thoại" />
+              </Form.Item>
+
+              <Form.Item
+                label="Mật khẩu"
+                className="mb-4"
+                name="password"
+                validateFirst
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng nhập mật khẩu!",
+                  },
+                  {
+                    min: 8,
+                    message: "Mật khẩu phải có ít nhất 8 ký tự!",
+                  },
+                  {
+                    pattern: /[!@#$%^&*(),.?":{}|<>]/,
+                    message: "Mật khẩu phải có ít nhất một ký tự đặc biệt!",
+                  },
+                ]}
+              >
+                <Input.Password
+                  size="large"
+                  placeholder="Nhập mật khẩu"
+                />
+              </Form.Item>
+
+              <Form.Item
+                layout="horizontal"
+                className="mt-2 !mb-0"
+                name="gender"
+                rules={[
+                  { required: true, message: "Vui lòng chọn giới tính!" },
+                ]}
+              >
+                <div className="flex justify-between">
+                  <Typography.Text>Giới tính:</Typography.Text>
+                  <Radio.Group>
+                    <Radio value="Nam">Nam</Radio>
+                    <Radio value="Nữ">Nữ</Radio>
+                  </Radio.Group>
+                </div>
+              </Form.Item>
+            </Form>
+          </Modal>
         </Layout>
       )}
     </>

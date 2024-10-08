@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Button, Card, Col, Collapse, Divider, Modal, Progress, Row, Skeleton, Typography } from 'antd'
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -7,11 +7,8 @@ import Layout from '~/components/layout/Public/Layout';
 import Video from '~/components/video/Video';
 import { toastError, toastSuccess } from '~/components/toast';
 
-import { FaFile } from "react-icons/fa6";
-import { FaBars, FaCheckCircle, FaInfinity, FaRegStar, FaStar } from 'react-icons/fa'
+import { FaCheckCircle, FaRegStar, FaStar } from 'react-icons/fa'
 import { PiVideoFill } from "react-icons/pi";
-import { IoPhonePortrait } from "react-icons/io5";
-import { AiFillEdit } from "react-icons/ai";
 
 import { courseApi } from '~/apis/courseApi';
 import { FormatPrice } from '~/components/table/Format';
@@ -33,7 +30,21 @@ const Crouses = () => {
   const user = useSelector((state) => state.auth.user);
   const isPurchased = user?.courses?.some((course) => course === data._id);
 
-  const fetchData = () => {
+  const Includes = ({ data }) => {
+    const parsedData = data?.map(item => JSON.parse(item));
+    return (
+      <>
+        {parsedData?.map((item, index) => (
+          <Col key={index} span={12} className="flex items-center gap-2">
+            <div style={{ width: '20px', marginRight: '8px' }} dangerouslySetInnerHTML={{ __html: item.svgCode }} />
+            {item.name}
+          </Col>
+        ))}
+      </>
+    );
+  };
+
+  useEffect(() => {
     courseApi.sig(slug.slug)
       .then(res => {
         setData(res);
@@ -43,244 +54,241 @@ const Crouses = () => {
         navigate('/courses')
         toastError('', 'Không tìm thấy khóa học!', 'Vui lòng thử lại sau!')
       })
-  }
+  }, [slug.slug])
 
-  useEffect(() => {
-    fetchData();
-  }, [])
+  const courseModules = useMemo(() =>
+    data?.module?.map((module) => ({
+      key: module._id,
+      label: (
+        <Typography.Title level={5} strong className='!mb-0'>
+          {module.title}
+        </Typography.Title>
+      ),
+      extra: `${module.children.length} Bài Học`,
+      children: module.children.map((video) => (
+        <div
+          key={video._id}
+          className='flex justify-between cursor-pointer'
+        >
+          <div className='flex items-center gap-1'>
+            <PiVideoFill color="ffc000" size={22} />
+            <Typography.Title level={5} className='!mb-0 p-2'>
+              {video.title}
+            </Typography.Title>
+          </div>
+        </div>
+      )),
+    })),
+    [data?.module]
+  );
+
 
   return (
     <Layout
       ldJson={data?.seo || {}}
       title={`${data?.name || 'Chicken War Studio'}`}>
       <section>
-        <Row gutter={[18, 18]}>
+        <Row gutter={[24, 24]}>
           <Col
             xl={{ span: 17, order: 2 }}
             lg={{ span: 15, order: 2 }}
-            md={{ span: 14, order: 1 }}
+            md={{ span: 24, order: 2 }}
             span={24}
             xs={{ order: 2 }}
           >
-            <Row gutter={[18, 18]}>
+            <Row gutter={[24, 24]}>
               <Col span={24}>
                 <Card loading={loading} hoverable>
                   <Card.Meta
                     className="mb-3"
                     title={
-                      <Typography.Title className="mb-0" level={3}>
-                        {data?.name}
-                      </Typography.Title>
+                      <Typography.Title className="!mb-0" level={3}> {data?.name} </Typography.Title>
                     }
                     description={`${data?.title || "Chưa có thông tin"}`}
                   />
-                  <Card className="my-2">
-                    <Card.Meta
-                      title="Lợi ích từ khóa học"
-                      description={
-                        <Row>
-                          {data?.benefit?.length > 0 ? (
-                            <>
-                              {data.benefit.map((item, index) => (
-                                <div key={index}>
+
+                  {!data?.hidden?.includes("benefit") && (
+                    <Card className="my-2">
+                      <Card.Meta
+                        title=<Typography.Title className="!mt-2 !mb-0" level={4}>Lợi ích từ khóa học</Typography.Title>
+                        description={
+                          <Row>
+                            {data?.benefit?.length > 0 ? (
+                              <>
+                                {data.benefit.map((item, index) => (
                                   <Col
                                     key={index}
+                                    span={24}
                                     className="flex items-center gap-2 my-1"
                                   >
                                     <FaCheckCircle color="ffc000" />
-                                    <Typography.Text>{item}</Typography.Text>
+                                    <Typography className='text-base'>{item}</Typography>
                                   </Col>
-                                </div>
-                              ))}
-                              <img
-                                className="card-image"
-                                src={`${baseURL}/asset/course/couresData.png`}
-                                alt="Mô tả ảnh"
-                              />
-                            </>
-                          ) : (
-                            <Typography.Text>
-                              Chưa có thông tin
-                            </Typography.Text>
-                          )}
-                        </Row>
-                      }
-                    />
-                  </Card>
+                                ))}
+                                <img
+                                  className="card-image"
+                                  src={`/course.png`}
+                                  alt="Mô tả ảnh"
+                                />
+                              </>
+                            ) : (
+                              <Typography.Text> Chưa có thông tin</Typography.Text>
+                            )}
+                          </Row>
+                        }
+                      />
+                    </Card>
+                  )}
 
                   <Card.Meta
                     title={
-                      <Typography.Title className="mt-2 mb-0" level={3}>
-                        Giới thiệu khóa học
-                      </Typography.Title>
+                      <Typography.Title className="!mt-2 !mb-0" level={3}>Giới thiệu khóa học</Typography.Title>
                     }
                     description=<>
-                      <Typography.Text>{data?.description || "Chưa có thông tin"}</Typography.Text>
+                      <Typography className='!text-justify !text-base'>{data?.description || "Chưa có thông tin"}</Typography>
                     </>
                   />
                 </Card>
               </Col>
 
-              <Col span={24}>
-                <Card loading={loading} hoverable>
-                  <Card.Meta
-                    className="mb-2"
-                    title={
-                      <Typography.Title className="mb-2" level={3}>
-                        Yêu cầu khóa học
-                      </Typography.Title>
-                    }
-                    description={
-                      <>
-                        <div className="mt-2">
-                          {data?.prerequisite?.length > 0 ? (
-                            data.prerequisite.map((item, index) => (
+              {!data?.hidden?.includes("prerequisite") && (
+                <Col span={24}>
+                  <Card loading={loading} hoverable>
+                    <Card.Meta
+                      className="mb-2"
+                      title={
+                        <Typography.Title className="mb-2" level={3}> Yêu Cầu Khóa Học</Typography.Title>
+                      }
+                      description={
+                        <>
+                          <div className="mt-2">
+                            {data?.prerequisite?.length > 0 ? (
+                              data.prerequisite.map((item, index) => (
+                                <div
+                                  key={index}
+                                  className="col-12 flex items-center gap-2 my-1"
+                                >
+                                  <FaCheckCircle color="ffc000" />
+                                  <Typography.Text className='text-base'>{item}</Typography.Text>
+                                </div>
+                              ))
+                            ) : (
+                              <Typography.Text>
+                                Chưa có thông tin
+                              </Typography.Text>
+                            )}
+                          </div>
+                        </>
+                      }
+                    />
+                  </Card>
+                </Col>
+
+              )}
+
+              {!data?.hidden?.includes("customer") && (
+                <Col Col span={24}>
+                  <Card loading={loading} hoverable>
+                    <Card.Meta
+                      className="mb-2"
+                      title={
+                        <Typography.Title className="mb-2" level={3}>
+                          Khóa học này phù hợp với
+                        </Typography.Title>
+                      }
+                      description={
+                        <>
+                          {data?.customer?.length > 0 ? (
+                            data.customer.map((item, index) => (
                               <div
                                 key={index}
                                 className="col-12 flex items-center gap-2 my-1"
                               >
                                 <FaCheckCircle color="ffc000" />
-                                <Typography.Text>{item}</Typography.Text>
+                                <Typography.Text className='text-base'>{item}</Typography.Text>
                               </div>
                             ))
                           ) : (
-                            <Typography.Text>
-                              Chưa có thông tin
-                            </Typography.Text>
+                            <Typography.Text>Chưa có thông tin</Typography.Text>
                           )}
-                        </div>
-                      </>
-                    }
-                  />
-                </Card>
-              </Col>
+                        </>
+                      }
+                    />
+                  </Card>
+                </Col>
+              )}
 
-              <Col span={24}>
-                <Card loading={loading} hoverable>
-                  <Card.Meta
-                    className="mb-2"
-                    title={
-                      <Typography.Title className="mb-2" level={3}>
-                        Khóa học này phù hợp với
-                      </Typography.Title>
-                    }
-                    description={
-                      <>
-                        {data?.customer?.length > 0 ? (
-                          data.customer.map((item, index) => (
-                            <div
-                              key={index}
-                              className="col-12 flex items-center gap-2 my-1"
-                            >
-                              <FaCheckCircle color="ffc000" />
-                              <Typography.Text>{item}</Typography.Text>
-                            </div>
-                          ))
-                        ) : (
-                          <Typography.Text>Chưa có thông tin</Typography.Text>
-                        )}
-                      </>
-                    }
-                  />
-                </Card>
-              </Col>
-
-              <Col span={24}>
-                <Card loading={loading} hoverable>
-                  <Card.Meta
-                    className="!mb-2"
-                    title={
-                      <Typography.Title className="mb-2" level={3}>
-                        Nội dung khóa học
-                      </Typography.Title>
-                    }
-                    description="4 Phần, 22 Bài học"
-                  />
-                  <Collapse
-                    items={[
-                      {
-                        key: "1",
-                        label: "Giới Thiệu",
-                        children: (
-                          <>
-                            <div className="flex items-center gap-2">
-                              <PiVideoFill color="ffc000" size={22} />
-                              <Typography.Text>
-
-                                Giới thiệu khóa học
-                              </Typography.Text>
-                              <Button
-                                className="ms-auto"
-                                type="primary"
-                                onClick={() => setVideo(true)}
+              {!data?.hidden?.includes("output") && (
+                <Col Col span={24}>
+                  <Card loading={loading} hoverable>
+                    <Card.Meta
+                      className="mb-2"
+                      title={
+                        <Typography.Title className="mb-2" level={3}>Hoàn Thành Khóa Học</Typography.Title>
+                      }
+                      description={
+                        <>
+                          {data?.output?.length > 0 ? (
+                            data.output.map((item, index) => (
+                              <div
+                                key={index}
+                                className="col-12 flex items-center gap-2 my-1"
                               >
-                                Xem thử
-                              </Button>
-                            </div>
-                          </>
-                        ),
-                      },
-                    ]}
-                    defaultActiveKey={["1"]}
-                  />
-                </Card>
-              </Col>
+                                <FaCheckCircle color="ffc000" />
+                                <Typography.Text className='text-base'>{item}</Typography.Text>
+                              </div>
+                            ))
+                          ) : (
+                            <Typography.Text>Chưa có thông tin</Typography.Text>
+                          )}
+                        </>
+                      }
+                    />
+                  </Card>
+                </Col>
+              )}
 
-              <Col span={24}>
-                <Card loading={loading} hoverable>
-                  <Card.Meta
-                    className="mb-2"
-                    title={
-                      <Typography.Title className="!mb-2" level={3}>
-                        Đánh giá từ học viên
-                      </Typography.Title>
-                    }
-                  />
-                  <Row gutter={[12, 12]}>
-                    <Col
-                      className="flex flex-col justify-center"
-                      md={{ span: 6 }}
-                      span={24}
-                    >
-                      <Typography.Title
-                        level={1}
-                        style={{ color: "#ffc000" }}
-                        className="text-center !mb-0"
+              {!data?.hidden?.includes("module") && (
+                <Col span={24}>
+                  <Card loading={loading} hoverable>
+                    <Card.Meta
+                      className="!mb-2"
+                      title={
+                        <Typography.Title className="mb-2" level={3}> Nội Dung Khóa Học </Typography.Title>
+                      }
+                      description={`Khóa học này bao gồm ${data?.module?.length} chương và ${data?.module?.reduce((acc, cur) => acc + cur.children.length, 0)} bài học`}
+                    />
+
+                    <Collapse
+                      items={courseModules}
+                      defaultActiveKey={["1"]}
+                    />
+                  </Card>
+                </Col>
+              )}
+
+              {!data?.hidden?.includes("review") && (
+                <Col span={24}>
+                  <Card loading={loading} hoverable>
+                    <Card.Meta
+                      className="mb-2"
+                      title={
+                        <Typography.Title className="!mb-2" level={3}> Đánh Giá Từ Học Viên </Typography.Title>
+                      }
+                    />
+                    <Row gutter={[12, 12]}>
+                      <Col
+                        className="flex flex-col justify-center"
+                        md={{ span: 6 }}
+                        span={24}
                       >
-                        4.9
-                      </Typography.Title>
-                      <div
-                        className="evaluate flex justify-center gap-1"
-                        style={{ color: "#ffc000", fontSize: 18 }}
-                      >
-                        <FaStar />
-                        <FaStar />
-                        <FaStar />
-                        <FaStar />
-                        <FaStar />
-                      </div>
-                      <Typography.Text className="text-center fs-6">
-                        Đánh giá khóa học
-                      </Typography.Text>
-                    </Col>
-
-                    <Col md={{ span: 18 }} span={24}>
-                      <div className="flex gap-2">
-                        <Progress
-                          className="mb-2"
-                          percent={90}
-                          status="active"
-                          percentPosition={{
-                            align: "center",
-                            type: "inner",
-                          }}
-                          size={["100%", 22]}
-                          strokeColor={{
-                            from: "#F6E96B",
-                            to: "#ffc000",
-                          }}
-                        />
-
+                        <Typography.Title
+                          level={1}
+                          style={{ color: "#ffc000" }}
+                          className="text-center !mb-0"
+                        >
+                          4.9
+                        </Typography.Title>
                         <div
                           className="evaluate flex justify-center gap-1"
                           style={{ color: "#ffc000", fontSize: 18 }}
@@ -291,126 +299,158 @@ const Crouses = () => {
                           <FaStar />
                           <FaStar />
                         </div>
-                      </div>
+                        <Typography.Text className="text-center text-base"> Đánh giá khóa học</Typography.Text>
+                      </Col>
 
-                      <div className="flex gap-2">
-                        <Progress
-                          className="mb-2"
-                          percent={9}
-                          percentPosition={{
-                            align: "center",
-                            type: "inner",
-                          }}
-                          size={["100%", 22]}
-                          strokeColor={{
-                            from: "#F6E96B",
-                            to: "#ffc000",
-                          }}
-                        />
+                      <Col md={{ span: 18 }} span={24}>
+                        <div className="flex gap-2">
+                          <Progress
+                            className="mb-2"
+                            percent={90}
+                            status="active"
+                            percentPosition={{
+                              align: "center",
+                              type: "inner",
+                            }}
+                            size={["100%", 22]}
+                            strokeColor={{
+                              from: "#F6E96B",
+                              to: "#ffc000",
+                            }}
+                          />
 
-                        <div
-                          className="evaluate flex justify-center gap-1"
-                          style={{ color: "#ffc000", fontSize: 18 }}
-                        >
-                          <FaStar />
-                          <FaStar />
-                          <FaStar />
-                          <FaStar />
-                          <FaRegStar />
+                          <div
+                            className="evaluate flex justify-center gap-1"
+                            style={{ color: "#ffc000", fontSize: 18 }}
+                          >
+                            <FaStar />
+                            <FaStar />
+                            <FaStar />
+                            <FaStar />
+                            <FaStar />
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex gap-2">
-                        <Progress
-                          className="mb-2"
-                          percent={1}
-                          percentPosition={{
-                            align: "center",
-                            type: "inner",
-                          }}
-                          size={["100%", 22]}
-                          strokeColor={{
-                            from: "#F6E96B",
-                            to: "#ffc000",
-                          }}
-                        />
+                        <div className="flex gap-2">
+                          <Progress
+                            className="mb-2"
+                            percent={9}
+                            percentPosition={{
+                              align: "center",
+                              type: "inner",
+                            }}
+                            size={["100%", 22]}
+                            strokeColor={{
+                              from: "#F6E96B",
+                              to: "#ffc000",
+                            }}
+                          />
 
-                        <div
-                          className="evaluate flex justify-center gap-1"
-                          style={{ color: "#ffc000", fontSize: 18 }}
-                        >
-                          <FaStar />
-                          <FaStar />
-                          <FaStar />
-                          <FaRegStar />
-                          <FaRegStar />
+                          <div
+                            className="evaluate flex justify-center gap-1"
+                            style={{ color: "#ffc000", fontSize: 18 }}
+                          >
+                            <FaStar />
+                            <FaStar />
+                            <FaStar />
+                            <FaStar />
+                            <FaRegStar />
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex gap-2">
-                        <Progress
-                          className="mb-2"
-                          percent={0}
-                          percentPosition={{
-                            align: "center",
-                            type: "inner",
-                          }}
-                          size={["100%", 22]}
-                          strokeColor={{
-                            from: "#F6E96B",
-                            to: "#ffc000",
-                          }}
-                        />
+                        <div className="flex gap-2">
+                          <Progress
+                            className="mb-2"
+                            percent={1}
+                            percentPosition={{
+                              align: "center",
+                              type: "inner",
+                            }}
+                            size={["100%", 22]}
+                            strokeColor={{
+                              from: "#F6E96B",
+                              to: "#ffc000",
+                            }}
+                          />
 
-                        <div
-                          className="evaluate flex justify-center gap-1"
-                          style={{ color: "#ffc000", fontSize: 18 }}
-                        >
-                          <FaStar />
-                          <FaStar />
-                          <FaRegStar />
-                          <FaRegStar />
-                          <FaRegStar />
+                          <div
+                            className="evaluate flex justify-center gap-1"
+                            style={{ color: "#ffc000", fontSize: 18 }}
+                          >
+                            <FaStar />
+                            <FaStar />
+                            <FaStar />
+                            <FaRegStar />
+                            <FaRegStar />
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex gap-2">
-                        <Progress
-                          className="mb-2"
-                          percent={0}
-                          percentPosition={{
-                            align: "center",
-                            type: "inner",
-                          }}
-                          size={["100%", 22]}
-                          strokeColor={{
-                            from: "#F6E96B",
-                            to: "#ffc000",
-                          }}
-                        />
+                        <div className="flex gap-2">
+                          <Progress
+                            className="mb-2"
+                            percent={0}
+                            percentPosition={{
+                              align: "center",
+                              type: "inner",
+                            }}
+                            size={["100%", 22]}
+                            strokeColor={{
+                              from: "#F6E96B",
+                              to: "#ffc000",
+                            }}
+                          />
 
-                        <div
-                          className="evaluate flex justify-center gap-1"
-                          style={{ color: "#ffc000", fontSize: 18 }}
-                        >
-                          <FaStar />
-                          <FaRegStar />
-                          <FaRegStar />
-                          <FaRegStar />
-                          <FaRegStar />
+                          <div
+                            className="evaluate flex justify-center gap-1"
+                            style={{ color: "#ffc000", fontSize: 18 }}
+                          >
+                            <FaStar />
+                            <FaStar />
+                            <FaRegStar />
+                            <FaRegStar />
+                            <FaRegStar />
+                          </div>
                         </div>
-                      </div>
-                    </Col>
-                  </Row>
-                </Card>
-              </Col>
+
+                        <div className="flex gap-2">
+                          <Progress
+                            className="mb-2"
+                            percent={0}
+                            percentPosition={{
+                              align: "center",
+                              type: "inner",
+                            }}
+                            size={["100%", 22]}
+                            strokeColor={{
+                              from: "#F6E96B",
+                              to: "#ffc000",
+                            }}
+                          />
+
+                          <div
+                            className="evaluate flex justify-center gap-1"
+                            style={{ color: "#ffc000", fontSize: 18 }}
+                          >
+                            <FaStar />
+                            <FaRegStar />
+                            <FaRegStar />
+                            <FaRegStar />
+                            <FaRegStar />
+                          </div>
+                        </div>
+                      </Col>
+                    </Row>
+                  </Card>
+                </Col>
+              )}
             </Row>
           </Col>
 
           <Col
+            className='mx-auto'
             xl={{ span: 7, order: 2 }}
             lg={{ span: 9, order: 2 }}
-            md={{ span: 10, order: 2 }}
+            md={{ span: 12, order: 1 }}
             span={24}
             xs={{ order: 1 }}
           >
@@ -432,7 +472,7 @@ const Crouses = () => {
                       <img
                         className="rounded-md"
                         style={{ height: "15rem", objectFit: "cover" }}
-                        src={data.imgDetail ? `${baseURL}/uploads/${data.imgDetail}` : `${baseURL}/asset/course/empty.png`}
+                        src={data.imgDetail ? `${baseURL}/uploads/${data.imgDetail}` : `/empty.png`}
                         alt=""
                       />
                     </div>
@@ -446,28 +486,12 @@ const Crouses = () => {
                 >
                   Khóa học bao gồm
                 </Divider>
-                <Col span={12} className="flex items-center gap-2">
-                  <FaBars size={18} /> Chuyên mục : 4
-                </Col>
-                <Col span={12} className="flex items-center gap-2">
-                  <PiVideoFill size={20} /> Bài học: 42
-                </Col>
-                <Col span={12} className="flex items-center gap-2">
-                  <AiFillEdit size={20} /> Bài tập
-                </Col>
-                <Col span={12} className="flex items-center gap-2">
-                  <FaFile size={20} /> Tài liệu
-                </Col>
-                <Col span={12} className="flex items-center gap-2">
-                  <FaInfinity size={20} /> Dễ hiểu
-                </Col>
-                <Col span={12} className="flex items-center gap-2">
-                  <FaInfinity size={20} /> Học trọn đời
-                </Col>
-                <Col span={24} className="flex items-center gap-2">
-                  <IoPhonePortrait size={22} /> Học trên mọi thiết bị có
-                  internet
-                </Col>
+
+                {data?.includes?.length > 0 ? (
+                  <Includes data={data.includes} />
+                ) : (
+                  <div>1</div>
+                )}
 
                 {isPurchased || data.price === 0 ? (
                   <>
@@ -575,7 +599,7 @@ const Crouses = () => {
       >
         <Video src="https://www.w3schools.com/html/mov_bbb.mp4" />
       </Modal>
-    </Layout>
+    </Layout >
   );
 }
 

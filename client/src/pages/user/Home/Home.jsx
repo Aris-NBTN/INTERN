@@ -1,10 +1,12 @@
 import { Card, Col, Progress, Row, Typography } from 'antd'
-import React from 'react'
-
 import LayoutAdmin from '~/components/layout/Admin/Layout'
 import EChartsLineChart from '~/components/charts/Line'
+import { useSelector } from 'react-redux';
 
 const Home = () => {
+    const { user } = useSelector((state) => state.auth);
+    console.log(user);
+
     return (
         <LayoutAdmin
             title='Trang chủ'
@@ -55,7 +57,19 @@ const Home = () => {
 
                 <Col span={24}>
                     <Card title='Video khóa học gần đây'>
-
+                        <Row>
+                            <Col span={18}>
+                                {/* <Video
+                                    mediaPlayerRef={mediaPlayerRef}
+                                    iduser={user?._id}
+                                    videoId={currentVideo._id}
+                                    autoPlay={true}
+                                    time={currentVideo.watchTime}
+                                    src={`${baseURL}/uploads/${currentVideo.src}`}
+                                /> */}
+                            </Col>
+                            <Col span={6}></Col>
+                        </Row>
                     </Card>
                 </Col>
             </Row>

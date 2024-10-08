@@ -1,42 +1,29 @@
 import CryptoJS from 'crypto-js';
 
-function encryptSHA256(data, secretKey) {
-    const secretKeyWordArray = CryptoJS.enc.Utf8.parse(secretKey);
-    return CryptoJS.AES.encrypt(data, secretKeyWordArray, {
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7,
-        iv: CryptoJS.lib.WordArray.create([0]),
-    }).toString();
-}
+const secretkey = import.meta.env.VITE_SECRETKEY
 
-function decryptSHA256(encryptedData, secretKey) {
-    const secretKeyWordArray = CryptoJS.enc.Utf8.parse(secretKey);
-    const decrypted = CryptoJS.AES.decrypt(encryptedData, secretKeyWordArray, {
-        mode: CryptoJS.mode.CBC,
-        padding: CryptoJS.pad.Pkcs7,
-        iv: CryptoJS.lib.WordArray.create([0]), // Vector khởi tạo IV phải giống như lúc mã hóa
-    });
-    return decrypted.toString(CryptoJS.enc.Utf8);
-}
+export const encrypt = (data) => {
+    try {
+        const dataString = typeof data === 'object' ? JSON.stringify(data) : String(data);
+        const encrypted = CryptoJS.AES.encrypt(dataString, secretkey);
+        return encrypted.toString();
+    } catch (error) {
+        console.error('Encryption error:', error);
+        return null;
+    }
+};
 
-export function decodeEncryptedValue(encryptedValue, secretKey) {
-    const base64Decoded = decodeURIComponent(encryptedValue);
-    const encryptedResult = CryptoJS.enc.Base64.parse(base64Decoded).toString(CryptoJS.enc.Utf8);
-    const decryptedResult = decryptSHA256(encryptedResult, secretKey);
-    return decryptedResult;
-}
-
-export function generateEncryptedValue(paymentId, secretKey) {
-    const concatString = paymentId.toString(); // Chỉ sử dụng paymentId
-    const encryptedResult = encryptSHA256(concatString, secretKey);
-    const base64Result = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(encryptedResult));
-    const percentEncodedResult = encodeURIComponent(base64Result);
-    return percentEncodedResult;
-}
-
-
-// const secretKey = "EiD0BVQle0xFjZvYOupQsXCWAcAwBaTjlZ7G7rryNos=";
-// const result = generateEncryptedValue(15680298, secretKey); // Chỉ truyền vào paymentId
-// console.log('Encrypted and Percent Encoded Result:', result);
-// const decryptedValue = decodeEncryptedValue(result, secretKey);
-// console.log('Decrypted Result:', decryptedValue);
+export const decrypt = (encryptedString) => {
+    try {
+        const decrypted = CryptoJS.AES.decrypt(encryptedString, secretkey);
+        const decryptedString = decrypted.toString(CryptoJS.enc.Utf8);
+        try {
+            return JSON.parse(decryptedString);
+        } catch {
+            return decryptedString;
+        }
+    } catch (error) {
+        console.error('Decryption error:', error);
+        return null;
+    }
+};

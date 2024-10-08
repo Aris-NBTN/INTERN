@@ -1,8 +1,8 @@
 import { instance } from ".";
 const baseURL = '/v1/pages'
 
-const get = async () => {
-    const response = await instance.get(`${baseURL}`)
+const get = async (body) => {
+    const response = await instance.get(`${baseURL}?page=${body?.page || 1}&limit=${body?.limit || 10}`)
     return response
 }
 
@@ -12,13 +12,17 @@ const add = async (data) => {
 }
 
 const del = async (id) => {
-    baseURL
     const response = await instance.delete(`${baseURL}/${id}`)
     return response
 }
 
 const put = async (body) => {
     const response = await instance.put(`${baseURL}/${body.id}`, body)
+    return response
+}
+
+const putOrder = async (body) => {
+    const response = await instance.put(`${baseURL}/order`, body)
     return response
 }
 
@@ -43,6 +47,7 @@ export const pagesApi = {
     del,
     sig,
     put,
+    putOrder,
     copy,
     sigEdit
 }

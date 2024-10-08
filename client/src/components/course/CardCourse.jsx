@@ -18,7 +18,7 @@ import '~/pages/public/Cart/Cart.css';
 import ListCart from '../cart/ListCart';
 import { IoMdLogIn } from 'react-icons/io';
 
-const CardCourse = ({ loading, info = '', carts = '', height = '15.75rem', ellipsisRow = 1, openList = true }) => {
+const CardCourse = ({ loading, info = '', carts = '', height = '15.75rem', ellipsisRow = 1, openList = true, link }) => {
   const ellipsis = true;
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -33,14 +33,14 @@ const CardCourse = ({ loading, info = '', carts = '', height = '15.75rem', ellip
         cover={
           <div className="card-inner" style={{ height: height }}>
             <div className="box">
-              <NavLink to={`/course/${info.slug || ''}`}>
+              <NavLink to={link || `/course/${info.slug}`}>
                 <div className="imgBox">
                   {loading && (
                     <Skeleton.Image className="!w-full !h-full" active={true} />
                   )}
                   <motion.img
-                    src={info.img ? `${baseURL}/uploads/${info.img}` : `${baseURL}/asset/course/empty.png`}
-                    alt={`Ảnh khóa học ${info.name} Chicken War Studio`}
+                    src={info.img ? `${baseURL}/uploads/${info.img}` : `/empty.png`}
+                    alt={`Ảnh khóa học ${info.name}`}
                     style={{ display: loading ? "none" : "block" }}
                     whileHover={{ scale: 1.3 }}
                     transition={{ duration: 0.4 }}
@@ -93,17 +93,10 @@ const CardCourse = ({ loading, info = '', carts = '', height = '15.75rem', ellip
         <NavLink to={`/course/${info.slug || ''}`}>
           <div className="card-course">
             <div className="content h-full">
-              <Typography.Title level={4}>{info.name}</Typography.Title>
+              <Typography.Title ellipsis={ellipsis ? { rows: ellipsisRow, suffix: "" } : false} level={4}>{info.name}</Typography.Title>
               <Typography.Paragraph
                 className="mb-2"
-                ellipsis={
-                  ellipsis
-                    ? {
-                      rows: ellipsisRow,
-                      suffix: "",
-                    }
-                    : false
-                }
+                ellipsis={ellipsis ? { rows: ellipsisRow, suffix: "" } : false}
               >
                 {info.title || "Khóa học chưa có mô tả"}
               </Typography.Paragraph>

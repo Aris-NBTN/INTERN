@@ -18,11 +18,11 @@ const PrivateRoute = ({ requiredPermission = [] }) => {
             dispatch(reLoginAuth({ token }));
         } else if (!token) {
             if (requiredPermission.length != 0) {
-                toastError('', "Vui lòng đăng nhập !")
+                toastError('', "Không Thể Truy Cập Trang!", "Vui lòng đăng nhập!")
             }
             navigate("/login", { replace: true });
         }
-    }, [dispatch, navigate, userId]);
+    }, [dispatch, navigate, userId, requiredPermission]);
 
     const hasPermission = requiredPermission.length === 0 || requiredPermission.includes(userType);
 

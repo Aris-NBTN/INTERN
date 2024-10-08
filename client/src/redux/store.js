@@ -11,7 +11,6 @@ import pluginsScriptSlice from "./slices/Data/pluginsScriptSlice";
 import pagesSlice from "./slices/Data/pagesSlice";
 import usersSlice from "./slices/Data/usersSlice";
 import groupPageSlice from "./slices/Data/groupPageSlice";
-import fileMangerSlice from "./slices/filesSlice";
 import roleSlice from "./slices/Data/roleSlice";
 import coursesSlice from "./slices/Data/coursesSlice";
 import categoryCoursesSlice from "./slices/Data/categoryCourseSlice";
@@ -19,6 +18,15 @@ import coursesOutstandSlice from "./slices/Data/coursesOutstandSlice"
 import orderSlice from "./slices/Data/orderSlice";
 import revenueSlice from "./slices/Data/revenueSlice";
 import pluginsSlice from "./slices/Data/pluginsSlice";
+import infoSlice from "./slices/Data/infoSlice";
+import bankSlice from "./slices/Data/bankSlice";
+import keyBankSlice from "./slices/Data/keyBankSlice";
+import restoreSlice from "./slices/Data/restoreSlice";
+import folderSlice from "./slices/Data/folderManagerSlice";
+import fileSlice from "./slices/Data/fileManagerSlice";
+import emailSlice from "./slices/Data/emailSlice";
+import notificationSlice from "./slices/Data/notificationSlice";
+import coursesFreeSlice from "./slices/Data/coursesFreeSlice";
 
 import orderUser from "./slices/User/orderSlice";
 import courseUser from "./slices/User/courseSlice";
@@ -66,14 +74,22 @@ export const store = configureStore({
     pages: pagesSlice,
     users: usersSlice,
     groupPages: groupPageSlice,
-    fileMangers: fileMangerSlice,
     roles: roleSlice,
     courses: coursesSlice,
     categoryCourses: categoryCoursesSlice,
     outstand: coursesOutstandSlice,
+    free: coursesFreeSlice,
     order: orderSlice,
     revenue: revenueSlice,
     plugins: pluginsSlice,
+    info: infoSlice,
+    bank: bankSlice,
+    keyBank: keyBankSlice,
+    restore: restoreSlice,
+    folder: folderSlice,
+    file: fileSlice,
+    email: emailSlice,
+    notification: notificationSlice,
 
     courseUser: courseUser,
     orderUser: orderUser,

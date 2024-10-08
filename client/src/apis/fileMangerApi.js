@@ -1,3 +1,4 @@
+import axios from "axios";
 import { instance } from ".";
 
 const baseURL = "/v1/file-manager";
@@ -22,18 +23,28 @@ const filesInFolder = async (body) => {
     return response
 }
 
-const createFolder = async (body) => {
+const getFolder = async () => {
+    const response = await instance.get(`${baseURL}/folder`)
+    return response
+}
+
+const addFolder = async (body) => {
     const response = await instance.post(`${baseURL}/folder`, body)
     return response
 }
 
-const updateFolder = async (body) => {
+const putFolder = async (body) => {
     const response = await instance.put(`${baseURL}/folder`, body)
     return response
 }
 
-const deleteFolder = async (body) => {
+const delFolder = async (body) => {
     const response = await instance.delete(`${baseURL}/folder`, body)
+    return response
+}
+
+const dowFolder = async (body) => {
+    const response = await instance.post(`${baseURL}/dow-folder`, body)
     return response
 }
 
@@ -45,7 +56,9 @@ export const fileMangerApi = {
 }
 
 export const folderMangerApi = {
-    createFolder,
-    deleteFolder,
-    updateFolder
+    getFolder,
+    addFolder,
+    delFolder,
+    putFolder,
+    dowFolder
 }

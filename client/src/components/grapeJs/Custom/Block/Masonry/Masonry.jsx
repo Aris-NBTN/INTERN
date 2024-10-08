@@ -461,7 +461,7 @@ const ImageCropper = () => {
                                     className='bg-dark text-white absolute bottom-0 end-0'
                                     style={{ width: '100%' }}
                                     placeholder='Chọn trang'
-                                    options={pages.map((page) => ({ label: page.name, value: page.slug }))}
+                                    options={pages?.newData?.map((page) => ({ label: page.name, value: page.slug }))}
                                     onChange={(value) => handleInputChange(index, value)}
                                 >
                                 </Select>

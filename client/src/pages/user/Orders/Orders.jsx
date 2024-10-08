@@ -12,6 +12,13 @@ import { FormatDayTimeWithHour } from '~/components/table/Format';
 import Invoice from '~/pages/admin/Orders/Invoice';
 
 const Orders = () => {
+    const dispatch = useDispatch();
+    const { orderUser, loading } = useSelector(state => state.orderUser)
+    const { user } = useSelector((state) => state.auth);
+
+    const [openOrder, setOpenOrder] = useState(false);
+    const [order, setOrder] = useState();
+
     const columns = [
         {
             title: 'Mã đơn hàng',
@@ -65,13 +72,6 @@ const Orders = () => {
         },
     ];
 
-    const dispatch = useDispatch();
-    const { orderUser, loading } = useSelector(state => state.orderUser)
-    const { user } = useSelector((state) => state.auth);
-
-    const [openOrder, setOpenOrder] = useState(false);
-    const [order, setOrder] = useState();
-
     const dataPages = useMemo(() =>
         orderUser
             ?.filter((order) => order?.status === true)
@@ -81,6 +81,9 @@ const Orders = () => {
             })),
         [orderUser]
     );
+
+    console.log(dataPages);
+
 
     useEffect(() => {
         if (user._id && loading) {
@@ -104,6 +107,7 @@ const Orders = () => {
                 data={dataPages}
                 columns={columns}
                 colEdit={false}
+                dragMode={false}
             />
             <Modal
                 centered

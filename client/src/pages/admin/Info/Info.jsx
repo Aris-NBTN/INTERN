@@ -1,37 +1,42 @@
 import { Button, Card, Input, Form, Col, Row, Space } from 'antd'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo } from 'react'
+import { useDispatch, useSelector } from 'react-redux';
 
 import LayoutAdmin from '~/components/layout/Admin/Layout'
-// import AntdUpload from '~/components/img/AntdImgUpload'
-import { useMediaQuery } from 'react-responsive';
-import { toastSuccess } from '~/components/toast';
+import { getInfoApi, putInfoApi } from '~/redux/slices/Data/infoSlice';
+import { genericDispatch } from '~/redux/utils';
 
-import { infoApi } from '~/apis/infoApi';
+import { id_info } from '~/utils';
 
 const Website = () => {
     const [formInfo] = Form.useForm();
+    const dispatch = useDispatch();
 
-    const putInfo = async () => {
-    };
+    const { info, loading } = useSelector(state => state.info);
 
-    const fetchData = () => {
-        infoApi.allInfo().then((res) => {
-            console.log(res);
-        })
+    const handlePutInfo = (data) => {
+        genericDispatch(dispatch, putInfoApi({ id: id_info, ...data }));
     };
 
     useEffect(() => {
-        fetchData()
+        if (loading) {
+            dispatch(getInfoApi());
+        }
     }, []);
+
+    useEffect(() => {
+        if (info?.newData?.[0]) {
+            formInfo.setFieldsValue(info?.newData?.[0]);
+        }
+    }, [info]);
 
     return (
         <LayoutAdmin
+            title={'Thông tin Website'}
             header='WEBSITE'
             button={
                 <>
-                    <Button type='primary' onClick={() => formInfo.submit}>
-                        Lưu thông tin
-                    </Button>
+                    <Button type='primary' onClick={() => formInfo.submit()}>Lưu thông tin</Button>
                 </>
             }
         >
@@ -40,131 +45,140 @@ const Website = () => {
                 className='w-full'
                 name="customForm"
                 layout="vertical"
-                onFinish={putInfo}
+                onFinish={handlePutInfo}
             >
-
-                <Row gutter={[18, 18]}>
-                    <Col md={{ span: 12 }} span={24}>
+                <Row gutter={[24, 24]}>
+                    <Col span={24}>
                         <Card
                             className='h-full'
                             title='Thông tin webstie'
                         >
-                            <Form.Item
-                                className='mb-2'
-                                name="name"
-                                label="Tên Website"
-                                rules={[{ required: true, message: 'Nhập tên Website!' }]}
-                            >
-                                <Input
-                                    className='mb-2'
-                                    placeholder="Nhập tên Website"
-                                />
-                            </Form.Item>
+                            <Row gutter={[18, 18]}>
+                                <Col md={{ span: 12 }} span={24}>
+                                    <Form.Item
+                                        className='mb-2'
+                                        name="name"
+                                        label="Tên Website"
+                                        rules={[{ required: true, message: 'Nhập tên Website!' }]}
+                                    >
+                                        <Input
+                                            size='large'
+                                            className='mb-2'
+                                            placeholder="Nhập tên Website"
+                                        />
+                                    </Form.Item>
+                                </Col>
 
-                            <Form.Item
-                                className='mb-2'
-                                name="manage"
-                                label="Tên quản lý"
-                                rules={[{ required: true, message: 'Nhập tên quản lý!' }]}
-                            >
-                                <Input
-                                    className='mb-2'
-                                    placeholder="Nhập tên quản lý"
-                                />
-                            </Form.Item>
+                                <Col md={{ span: 12 }} span={24}>
+                                    <Form.Item
+                                        className='mb-2'
+                                        name="manage"
+                                        label="Tên quản lý"
+                                        rules={[{ required: true, message: 'Nhập tên quản lý!' }]}
+                                    >
+                                        <Input
+                                            size='large'
+                                            className='mb-2'
+                                            placeholder="Nhập tên quản lý"
+                                        />
+                                    </Form.Item>
+                                </Col>
 
-                            <Form.Item
-                                className='mb-2'
-                                name="phone"
-                                label="Số điện thoại"
-                                rules={[{ required: true, message: 'Nhập số điện thoại!' }]}
-                            >
-                                <Input
-                                    className='mb-2'
-                                    placeholder="Nhập số điện thoại"
-                                />
-                            </Form.Item>
+                                <Col md={{ span: 12 }} span={24}>
+                                    <Form.Item
+                                        className='mb-2'
+                                        name="phone"
+                                        label="Số điện thoại"
+                                        rules={[{ required: true, message: 'Nhập số điện thoại!' }]}
+                                    >
+                                        <Input
+                                            size='large'
+                                            className='mb-2'
+                                            placeholder="Nhập số điện thoại"
+                                        />
+                                    </Form.Item>
 
-                            <Form.Item
-                                className='mb-2'
-                                name="address"
-                                label="Địa chỉ"
-                                rules={[{ required: true, message: 'Nhập địa chỉ!' }]}
-                            >
-                                <Input
-                                    className='mb-2'
-                                    placeholder="Nhập địa chỉ"
-                                />
-                            </Form.Item>
+                                </Col>
 
-                            <Form.Item
-                                className='mb-2'
-                                name="email"
-                                label="Email"
-                                rules={[{ required: true, message: 'Nhập email!' }]}
-                            >
-                                <Input
-                                    className='mb-2'
-                                    placeholder="Nhập email"
-                                />
-                            </Form.Item>
+                                <Col md={{ span: 12 }} span={24}>
+                                    <Form.Item
+                                        className='mb-2'
+                                        name="email"
+                                        label="Email"
+                                        rules={[{ required: true, message: 'Nhập email!' }]}
+                                    >
+                                        <Input
+                                            size='large'
+                                            className='mb-2'
+                                            placeholder="Nhập email"
+                                        />
+                                    </Form.Item>
+                                </Col>
+
+                                <Col md={{ span: 12 }} span={24}>
+                                    <Form.Item
+                                        className='mb-2'
+                                        name="address"
+                                        label="Địa chỉ"
+                                        rules={[{ required: true, message: 'Nhập địa chỉ!' }]}
+                                    >
+                                        <Input
+                                            size='large'
+                                            className='mb-2'
+                                            placeholder="Nhập địa chỉ"
+                                        />
+                                    </Form.Item>
+                                </Col>
+
+                                <Col md={{ span: 12 }} span={24}>
+                                    <Form.Item
+                                        className='mb-2'
+                                        name="description"
+                                        label="Mô tả webiste"
+                                        rules={[{ required: true, message: 'Nhập Mô tả!' }]}
+                                    >
+                                        <Input
+                                            size='large'
+                                            className='mb-2'
+                                            placeholder="Nhập Mô tảỉ"
+                                        />
+                                    </Form.Item>
+                                </Col>
+
+                                <Col md={{ span: 12 }} span={24}>
+
+                                    <Form.Item
+                                        className='mb-2'
+                                        name="keywords"
+                                        label="Từ khóa tìm kiếm"
+                                        rules={[{ required: true, message: 'Nhập từ khóa !' }]}
+                                    >
+                                        <Input
+                                            size='large'
+                                            className='mb-2'
+                                            placeholder="Nhập từ khóa"
+                                        />
+                                    </Form.Item>
+
+                                </Col>
+                            </Row>
                         </Card>
                     </Col>
 
-                    <Col md={{ span: 12 }} span={24}>
-                        <Card
-                            className='mb-5'
-                            title='Thông tin Google'
-                        >
-                            <Form.Item
-                                className='mb-2'
-                                name="GoogleClient"
-                                label="Quản lý đăng nhập google"
-                                rules={[{ required: true, message: 'Nhập Google Client!' }]}
-                            >
-                                <Input
-                                    className='mb-2'
-                                    placeholder="Nhập Google Client"
-                                />
-                            </Form.Item>
+                    <Col className='mb-6' span={24}>
+                        <Card title='Ảnh website'>
+                            <Row gutter={[24, 24]}>
+                                <Col xl={{ span: 8 }} lg={{ span: 12 }} span={24}>
+                                    <Card title='Icon website'>
 
-                            <Form.Item
-                                className='mb-0'
-                                name="GoogleTitle"
-                                label="Quản lý gửi Email Google"
-                                rules={[{ required: true, message: 'Nhập tiêu đề!' }]}
-                            >
-                                <Input
-                                    className='mb-2'
-                                    placeholder="Nhập tiêu đề"
-                                />
-                            </Form.Item>
+                                    </Card>
+                                </Col>
+                                <Col xl={{ span: 8 }} lg={{ span: 12 }} span={24}>
+                                    <Card title='Ảnh trang Login'>
 
-                            <Form.Item
-                                className='mb-0'
-                                name="GoogleEmail"
-                                rules={[{ required: true, message: 'Nhập email!' }]}
-                            >
-                                <Input
-                                    className='mb-2'
-                                    placeholder="Nhập email"
-                                />
-                            </Form.Item>
-
-                            <Form.Item
-                                className='mb-0'
-                                name="GooglePassword"
-                                rules={[{ required: true, message: 'Nhập mật khẩu!' }]}
-                            >
-                                <Input
-                                    className='mb-2'
-                                    placeholder="Nhập mật khẩu"
-                                />
-                            </Form.Item>
-                        </Card>
-
-                        <Card>
-                            Ảnh google
+                                    </Card>
+                                </Col>
+                            </Row>
                         </Card>
                     </Col>
                 </Row>

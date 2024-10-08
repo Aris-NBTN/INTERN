@@ -2,17 +2,17 @@ import { instance } from ".";
 
 const baseURL = "/v1/info";
 
-const allInfo = async () => {
+const get = async () => {
     const response = await instance.get(`${baseURL}`)
     return response
 }
 
-const updateInfo = async (body) => {
-    const response = await instance.post(`${baseURL}`, body)
+const put = async (body) => {
+    const response = await instance.put(`${baseURL}/${body.id}`, body)
     return response
 }
 
 export const infoApi = {
-    allInfo,
-    updateInfo,
+    get,
+    put,
 }

@@ -1,144 +1,212 @@
-import { Button } from 'antd'
-import React, { useEffect, useState } from 'react'
+import { Button, DatePicker, Form, Input, Modal, Row, Select } from 'antd'
+import { useEffect, useMemo, useState } from 'react'
 
 import LayoutAdmin from '~/components/layout/Admin/Layout'
 import Table from '~/components/table/Table';
-import { FaInfinity } from "react-icons/fa";
+import UploadPlugins from '~/components/upload/Plugins';
+import { useDispatch, useSelector } from 'react-redux';
+import { addPluginsApi, delPluginsApi, getPluginsApi, putPluginsApi } from '~/redux/slices/Data/pluginsSlice';
+import { genericDispatch } from '~/redux/utils';
+import { FormatDay, FormatDayTime } from '~/components/table/Format';
 
 const Plugins = () => {
-    const [data, setData] = useState([
-        {
-            key: 1,
-            name: 'Icon',
-            description: 'Plugin tạo block Icon hiển thị icon',
-            status: 'Hoạt động',
-            DateEnd: <FaInfinity />,
-            DateCreate: '26/8/2024',
-            DateUpdate: '26/8/2024',
-        },
-        {
-            key: 2,
-            name: '3D',
-            description: 'Plugin tạo block 3D hiển thị icon',
-            status: 'Hoạt động',
-            DateEnd: <FaInfinity />,
-            DateCreate: '26/8/2024',
-            DateUpdate: '26/8/2024',
-        },
-        {
-            key: 3,
-            name: 'Basic',
-            description: 'Plugin tạo các block trong nhóm cơ bản hiển thị icon',
-            status: 'Hoạt động',
-            DateEnd: <FaInfinity />,
-            DateCreate: '26/8/2024',
-            DateUpdate: '26/8/2024',
-        },
-        {
-            key: 4,
-            name: 'Multi Block',
-            description: 'Plugin tạo các block trong các nhóm Khối Blog,... hiển thị icon',
-            status: 'Hoạt động',
-            DateEnd: <FaInfinity />,
-            DateCreate: '26/8/2024',
-            DateUpdate: '26/8/2024',
-        },
-        {
-            key: 5,
-            name: 'Multi Font',
-            description: 'Plugin tạo thêm font chữ cho website',
-            status: 'Hoạt động',
-            DateEnd: <FaInfinity />,
-            DateCreate: '26/8/2024',
-            DateUpdate: '26/8/2024',
-        },
-        {
-            key: 6,
-            name: 'Link Block',
-            description: 'Plugin tạo block dạng link cho website',
-            status: 'Hoạt động',
-            DateEnd: <FaInfinity />,
-            DateCreate: '26/8/2024',
-            DateUpdate: '26/8/2024',
-        },
-        {
-            key: 7,
-            name: 'User Block',
-            description: 'Plugin tạo block trực tiếp cho người dùng',
-            status: 'Hoạt động',
-            DateEnd: <FaInfinity />,
-            DateCreate: '26/8/2024',
-            DateUpdate: '26/8/2024',
-        },
-    ]);
-    const [loading, setLoading] = useState(true);
+    const dispatch = useDispatch();
+    const [formPlugins] = Form.useForm();
+    const [openPlugins, setOpenPlugins] = useState(false);
+    const { plugins, loading } = useSelector(state => state.plugins)
+
+    const dataGroup = useMemo(() =>
+        plugins?.newData?.map((plugin) => ({
+            ...plugin,
+            key: plugin._id,
+        })),
+        [plugins]
+    );
 
     const columnsCourse = [
         {
+            title: 'ID',
+            dataIndex: 'id',
+            width: '15%',
+            ellipsis: {
+                showTitle: true,
+            },
+        },
+        {
             title: 'Tên Plugins',
             dataIndex: 'name',
-            width: '30%',
+            width: '15%',
+            editable: true,
         },
         {
             title: 'Mô tả',
             dataIndex: 'description',
-            width: '30%',
+            width: '15%',
+            editable: true,
         },
         {
             title: 'Trang thái',
             dataIndex: 'status',
-            width: '15%',
-        },
-        {
-            title: 'Hạn sử dụng',
-            dataIndex: 'DateEnd',
-            width: '15%',
+            type: 'select',
+            width: '8%',
+            editable: true,
+            optionSelect: [{ label: 'Hoạt động', value: true }, { label: 'Không hoạt động', value: false }],
+            render: (status) => {
+                return status ? 'Hoạt động' : 'Không hoạt động'
+            }
         },
         {
             title: 'Ngày thêm',
-            dataIndex: 'DateCreate',
-            width: '15%',
+            dataIndex: 'createdAt',
+            width: '8%',
+            render: (day) => FormatDay(day)
+        },
+        {
+            title: 'Hết hạn',
+            dataIndex: 'expiry',
+            width: '8%',
+            render: (day) => {
+                return day ? FormatDay(day) : 'Vĩnh viễn'
+            }
         },
         {
             title: 'Ngày cập nhập',
-            dataIndex: 'DateUpdate',
-            width: '15%',
+            dataIndex: 'updatedAt',
+            width: '10%',
+            render: (day) => FormatDayTime(day)
+        },
+        {
+            title: 'File',
+            dataIndex: 'src',
+            width: '10%',
+            render: (src, record) => {
+                return <div className="flex justify-center">
+                    <UploadPlugins
+                        id={record._id}
+                        name={src ? 'Cập nhập' : 'Tải lên'}
+                    />
+                </div>
+            }
         },
     ];
 
-    const fecthData = () => {
-        setLoading(false);
+    const handleAddPlugins = (data) => {
+        genericDispatch(dispatch, addPluginsApi(data),
+            () => {
+                setOpenPlugins(false)
+                formPlugins.resetFields()
+            }
+        );
     }
 
-    const handlePutCourse = (newData, oldData) => {
-
+    const handlePutPlugins = (data) => {
+        data._id = data.id;
+        delete data.id;
+        genericDispatch(dispatch, putPluginsApi(data));
     }
 
-    const handleDeleteCourse = (oldData) => {
-
+    const handleDelPlugins = (data) => {
+        genericDispatch(dispatch, delPluginsApi(data))
     }
 
     useEffect(() => {
-        fecthData();
-    }, [])
+        if (loading) {
+            dispatch(getPluginsApi({ page: 1, limit: localStorage.getItem('pageSize') || 10 }));
+        }
+    }, []);
 
     return (
         <LayoutAdmin
             header={'PLUGINS'}
-            button={
-                <>
-                    <Button type='primary'>Thêm Plugins</Button>
-                </>
-            }
+            button={<Button onClick={() => setOpenPlugins(true)} type='primary'>Thêm Plugins</Button>}
         >
             <Table
+                dragMode={false}
+                Api={getPluginsApi}
+                total={plugins?.totalItems}
                 loading={loading}
-                data={data}
+                data={dataGroup}
                 columns={columnsCourse}
-                onSave={handlePutCourse}
-                colEdit={false}
-                onDelete={handleDeleteCourse}
+                onSave={handlePutPlugins}
+                onDelete={handleDelPlugins}
             />
+
+            <Modal
+                title="Thêm Plugins"
+                centered
+                open={openPlugins}
+                onOk={() => formPlugins.submit()}
+                onCancel={() => setOpenPlugins(false)}
+            >
+                <Form form={formPlugins} onFinish={handleAddPlugins} layout="vertical">
+                    <Form.Item
+                        name="name"
+                        className='!mb-2'
+                        label="Tên Plugins"
+                        rules={[{ required: true, message: 'Nhập tên Plugins!' }]}
+                    >
+                        <Input
+                            placeholder="Nhập tên pluigns"
+                            onKeyDown={(e) => e.stopPropagation()}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="id"
+                        className='!mb-2'
+                        label="ID"
+                        rules={[{ required: true, message: 'Nhập id!' }]}
+                    >
+                        <Input
+                            placeholder="Nhập tên pluigns"
+                            onKeyDown={(e) => e.stopPropagation()}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="status"
+                        className='!mb-2'
+                        label="Trang thái"
+                        rules={[{ required: true, message: 'Chọn trang thái!' }]}
+                    >
+                        <Select
+                            placeholder="Chọn trang thái"
+                            options={[
+                                {
+                                    label: 'Hoạt động',
+                                    value: true
+                                },
+                                {
+                                    label: 'Không hoạt động',
+                                    value: false
+                                }
+                            ]}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="description"
+                        className='!mb-2'
+                        label="Mô tả"
+                        rules={[{ required: true, message: 'Nhập mô tả!' }]}
+                    >
+                        <Input
+                            placeholder="Nhập tên pluigns"
+                            onKeyDown={(e) => e.stopPropagation()}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="expiry"
+                        className='!mb-2'
+                        label="Ngày hết hạn"
+                    >
+                        <DatePicker
+                            style={{ width: '100%' }}
+                        />
+                    </Form.Item>
+                </Form>
+            </Modal>
         </LayoutAdmin>
     )
 }

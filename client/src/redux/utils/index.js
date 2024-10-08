@@ -4,11 +4,10 @@ import { toastError, toastLoading, toastSuccess } from '~/components/toast';
 export const genericSlice = ({
     name,
     initialState,
-    getApi,
-    addApi,
-    delApi,
-    putApi,
-    copyApi,
+    getApi = [],
+    addApi = [],
+    delApi = [],
+    putApi = [],
     reducers,
 }) => {
     return createSlice({
@@ -18,69 +17,73 @@ export const genericSlice = ({
             ...reducers,
         },
         extraReducers: (builder) => {
-            getApi && builder
-                .addCase(getApi.pending, (state) => { state.loading = true; })
-                .addCase(getApi.fulfilled, (state, action) => {
-                    state[name] = action.payload;
-                    state.loading = false;
-                    state.error = false;
-                })
-                .addCase(getApi.rejected, (state, action) => {
-                    state[name] = action.payload;
-                    state.loading = false;
-                    state.error = true;
+            if (Array.isArray(getApi)) {
+                getApi.forEach(api => {
+                    builder
+                        .addCase(api.pending, (state) => { state.loading = true; })
+                        .addCase(api.fulfilled, (state, action) => {
+                            state[name] = action.payload;
+                            state.loading = false;
+                            state.error = false;
+                        })
+                        .addCase(api.rejected, (state, action) => {
+                            state[name] = action.payload;
+                            state.loading = false;
+                            state.error = true;
+                        });
                 });
+            }
 
-            addApi && builder
-                .addCase(addApi.pending, (state) => { state.loading = true; })
-                .addCase(addApi.fulfilled, (state, action) => {
-                    state[name].unshift(action.payload.newData);
-                    state.loading = false;
-                    state.error = false;
-                })
-                .addCase(addApi.rejected, (state) => {
-                    state.loading = false;
-                    state.error = true;
+            if (Array.isArray(addApi)) {
+                addApi.forEach(api => {
+                    builder
+                        .addCase(api.pending, (state) => { state.loading = true; })
+                        .addCase(api.fulfilled, (state, action) => {
+                            state[name].newData.unshift(action.payload.newData);
+                            state.loading = false;
+                            state.error = false;
+                        })
+                        .addCase(api.rejected, (state) => {
+                            state.loading = false;
+                            state.error = true;
+                        });
                 });
+            }
 
-            copyApi && builder
-                .addCase(copyApi.pending, (state) => { state.loading = true; })
-                .addCase(copyApi.fulfilled, (state, action) => {
-                    state[name].unshift(action.payload.newData);
-                    state.loading = false;
-                    state.error = false;
-                })
-                .addCase(copyApi.rejected, (state) => {
-                    state.loading = false;
-                    state.error = true;
+            if (Array.isArray(delApi)) {
+                delApi.forEach(api => {
+                    builder
+                        .addCase(api.pending, (state) => { state.loading = true; })
+                        .addCase(api.fulfilled, (state, action) => {
+                            state[name].newData = state[name].newData.filter(data => data._id !== action.payload._id);
+                            state.loading = false;
+                            state.error = false;
+                        })
+                        .addCase(api.rejected, (state) => {
+                            state.loading = false;
+                            state.error = true;
+                        });
                 });
+            }
 
-            delApi && builder
-                .addCase(delApi.pending, (state) => { state.loading = true; })
-                .addCase(delApi.fulfilled, (state, action) => {
-                    state[name] = state[name].filter(data => data._id !== action.payload._id);
-                    state.loading = false;
-                    state.error = false;
-                })
-                .addCase(delApi.rejected, (state) => {
-                    state.loading = false;
-                    state.error = true;
+            if (Array.isArray(putApi)) {
+                putApi.forEach(api => {
+                    builder
+                        .addCase(api.pending, (state) => { state.loading = true; })
+                        .addCase(api.fulfilled, (state, action) => {
+                            state.loading = false;
+                            state.error = false;
+                            const index = state[name].newData.findIndex(data => data._id === action.payload.newData._id);
+                            if (index !== -1) {
+                                state[name].newData[index] = action.payload.newData;
+                            }
+                        })
+                        .addCase(api.rejected, (state) => {
+                            state.loading = false;
+                            state.error = true;
+                        });
                 });
-
-            putApi && builder
-                .addCase(putApi.pending, (state) => { state.loading = true; })
-                .addCase(putApi.fulfilled, (state, action) => {
-                    state.loading = false;
-                    state.error = false;
-                    const index = state[name].findIndex(data => data._id === action.payload.newData._id);
-                    if (index !== -1) {
-                        state[name][index] = action.payload.newData;
-                    }
-                })
-                .addCase(putApi.rejected, (state) => {
-                    state.loading = false;
-                    state.error = true;
-                });
+            }
         },
     });
 };
@@ -97,16 +100,17 @@ export const genericThunk = (key, api) => createAsyncThunk(key, async (body, thu
 export const genericDispatch = (dispatch, apiCall, onSuccess, onError) => {
     const now = new Date();
     const time = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
-    toastLoading(time, 'Đang cập nhập...');
+    toastLoading(time, 'Đang cập nhật...');
     return dispatch(apiCall)
         .then((result) => {
             if (result.error) {
-                toastError(time, 'Cập nhập thất bại!', result.payload);
+                toastError(time, 'Cập nhật thất bại!', result.payload);
                 if (onError) onError(result);
             } else {
-                toastSuccess(time, 'Cập nhập thành công!', result.payload.message);
+                toastSuccess(time, 'Cập nhật thành công!', result.payload.message);
                 if (onSuccess) onSuccess(result);
             }
             return result;
-        })
+        });
 };
+

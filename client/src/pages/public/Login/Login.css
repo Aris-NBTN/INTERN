@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
-
 .input-container {
     position: relative;
     margin: 10px auto;
@@ -326,7 +325,6 @@ input::placeholder {
     }
 
     .forget-pass{
-        flex-direction: column;
         align-items: center;
     }
 }

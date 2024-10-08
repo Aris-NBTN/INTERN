@@ -15,8 +15,8 @@ import { FaFilePen } from 'react-icons/fa6';
 import { exportDataExcel } from '~/utils/export';
 
 import { genericDispatch } from '~/redux/utils';
-import { useDispatch, useSelector } from 'react-redux';
-import { getPageApi, addPageApi, delPageApi, putPageApi, copyPageApi } from '~/redux/slices/Data/pagesSlice';
+import { useDispatch, useSelector } from 'react-redux'; 4
+import { getPageApi, addPageApi, delPageApi, putPageApi, putOrderApi, copyPageApi } from '~/redux/slices/Data/pagesSlice';
 import { getGroupApi, addGroupApi, delGroupApi, putGroupApi } from '~/redux/slices/Data/groupPageSlice';
 
 const Pages = () => {
@@ -27,13 +27,16 @@ const Pages = () => {
     const [formAddCategory] = Form.useForm();
 
     const { pages, loading } = useSelector((state) => state.pages);
-    const { groupPages, loading: loadingGroup } = useSelector((state) => state.groupPages);
+    const { groupPages: data, loading: loadingGroup } = useSelector((state) => state.groupPages);
+    const groupPages = data?.newData;
 
     const [openAddPage, setOpenAddPage] = useState(false);
     const [openAddCategory, setOpenAddCategory] = useState(false);
 
+    const [drag, setDrag] = useState(localStorage.getItem('drag') === 'true' ? true : false);
+
     const dataPages = useMemo(() =>
-        pages.map((page) => ({
+        pages?.newData?.map((page) => ({
             ...page,
             key: page._id,
         })),
@@ -41,7 +44,7 @@ const Pages = () => {
     );
 
     const dataGroup = useMemo(() =>
-        groupPages.map((groupPage) => ({
+        groupPages?.map((groupPage) => ({
             ...groupPage,
             key: groupPage._id,
         })),
@@ -110,9 +113,9 @@ const Pages = () => {
             width: '8%',
             type: 'select',
             editable: true,
-            optionSelect: Array.isArray(groupPages) && groupPages.length > 0 ? groupPages?.map(item => ({ label: item.group, value: item._id })) : [],
-            render: (group) => (group && groupPages && Array.isArray(groupPages) && groupPages.length > 0) ? FindNameById(group, groupPages, 'group') : null,
-            ...(Array.isArray(groupPages) && groupPages.length > 0 ? FilterSelect('group', groupPages.map(item => ({ text: item.group, value: item._id }))) : {}),
+            optionSelect: Array.isArray(groupPages) && groupPages?.length > 0 ? groupPages?.map(item => ({ label: item.group, value: item._id })) : [],
+            render: (group) => (group && groupPages && Array.isArray(groupPages) && groupPages?.length > 0) ? FindNameById(group, groupPages, 'group') : null,
+            ...(Array.isArray(groupPages) && groupPages?.length > 0 ? FilterSelect('group', groupPages?.map(item => ({ text: item.group, value: item._id }))) : {}),
         },
     ];
 
@@ -164,8 +167,8 @@ const Pages = () => {
     };
 
     useEffect(() => {
-        if (loading === true) {
-            dispatch(getPageApi());
+        if (loading) {
+            dispatch(getPageApi({ page: 1, limit: localStorage.getItem('pageSize') || 10 }));
         }
     }, []);
 
@@ -177,16 +180,37 @@ const Pages = () => {
 
     return (
         <LayoutAdmin
+            title={'Bài viết'}
             header={'BÀI VIẾT'}
             button={
                 <>
+                    {drag ?
+                        <Button onClick={() => {
+                            setDrag(false);
+                            localStorage.setItem('drag', 'false');
+                        }}>
+                            <Typography>Tắt sắp xếp</Typography>
+                        </Button>
+                        :
+                        <Button type='primary' onClick={() => {
+                            setDrag(true);
+                            localStorage.setItem('drag', 'true');
+                        }}>
+                            Bật sắp xếp
+                        </Button>
+                    }
+
                     <Button type='primary' onClick={() => setOpenAddCategory(true)}>Thêm nhóm</Button>
                     <Button type='primary' onClick={() => setOpenAddPage(true)}>Thêm trang</Button>
-                    {/* <Button onClick={() => exportDataExcel(data, 'Pages.xlsx')} type='primary'>Xuất file Excel</Button> */}
+                    <Button onClick={() => exportDataExcel(dataPages, 'Pages.xlsx')} type='primary'>Xuất file Excel</Button>
                 </>
             }
         >
             <Table
+                dragMode={drag}
+                Api={getPageApi}
+                ApiPut={putOrderApi}
+                total={pages?.totalItems}
                 loading={loading}
                 data={dataPages}
                 columns={columns}

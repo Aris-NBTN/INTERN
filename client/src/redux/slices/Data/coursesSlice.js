@@ -7,6 +7,7 @@ export const getCourseApi = genericThunk(`${name}/get`, courseApi.get);
 export const addCourseApi = genericThunk(`${name}/add`, courseApi.add);
 export const delCourseApi = genericThunk(`${name}/del`, courseApi.del);
 export const putCourseApi = genericThunk(`${name}/put`, courseApi.put);
+export const putOrderCourseApi = genericThunk(`${name}/put-order`, courseApi.putOrder);
 
 const coursesSlice = genericSlice({
     name: name,
@@ -15,10 +16,10 @@ const coursesSlice = genericSlice({
         loading: true,
         error: false,
     },
-    getApi: getCourseApi,
-    addApi: addCourseApi,
-    delApi: delCourseApi,
-    putApi: putCourseApi
+    getApi: [getCourseApi, putOrderCourseApi],
+    addApi: [addCourseApi],
+    delApi: [delCourseApi],
+    putApi: [putCourseApi]
 });
 
 export default coursesSlice.reducer;

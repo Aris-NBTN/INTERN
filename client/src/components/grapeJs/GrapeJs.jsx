@@ -12,7 +12,7 @@ import { baseURL } from '~/utils';
 import { toastError, toastLoading, toastSuccess } from '../toast';
 import SkeletonGrapeJs from '~/components/loading/SkeletonGrapeJs';
 
-const Page = ({ data, scripts, styles, pluginss, plugins, pluginsOpts, savePage, slug, folder, configGrapeJs, height = '100vh' }) => {
+const Page = ({ data, canvas, pluginss, plugins, pluginsOpts, savePage, slug, folder, configGrapeJs, height = '100vh' }) => {
     const editorRef = useRef(null);
     const [loading, setLoading] = useState(true);
 
@@ -69,7 +69,6 @@ const Page = ({ data, scripts, styles, pluginss, plugins, pluginsOpts, savePage,
         configGrapeJs(editor);
         save(editor);
 
-
         editor.on('asset:open', () => {
             const amConfig = editor.AssetManager;
             console.log(amConfig);
@@ -90,8 +89,8 @@ const Page = ({ data, scripts, styles, pluginss, plugins, pluginsOpts, savePage,
                 options={{
                     height: height,
                     canvas: {
-                        scripts: scripts,
-                        styles: styles
+                        scripts: canvas?.scripts,
+                        styles: canvas?.styles
                     },
                     plugins: plugins,
                     pluginsOpts: pluginsOpts,
@@ -400,6 +399,15 @@ const Page = ({ data, scripts, styles, pluginss, plugins, pluginsOpts, savePage,
                                 properties: [
                                     {
                                         name: 'Font', property: 'font-family'
+                                    },
+                                    {
+                                        type: 'aris-custom-select',
+                                        property: 'overflow-wrap',
+                                        options: [
+                                            { name: 'Không có', value: 'no' },
+                                            { name: 'Break Word', value: 'break-word' },
+                                        ],
+                                        default: 'no'
                                     },
                                     {
                                         name: 'Weight',

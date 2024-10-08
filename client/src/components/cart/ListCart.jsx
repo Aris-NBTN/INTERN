@@ -21,7 +21,7 @@ const ListCart = ({ carts }) => {
                             <NavLink to={`/course/${item.slug}`}>
                                 <img
                                     className="!h-24 product-image"
-                                    src={item.img ? `${baseURL}/uploads/${item.img}` : `${baseURL}/asset/course/empty.png`}
+                                    src={item.img ? `${baseURL}/uploads/${item.img}` : `/empty.png`}
                                 />
                             </NavLink>
                         </div>

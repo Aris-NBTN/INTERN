@@ -78,7 +78,7 @@ const Courses = () => {
                 Tất cả
               </Radio>
 
-              {categories.map((item) => (
+              {categories?.newData?.map((item) => (
                 <Radio key={item.slug} value={item._id}>
                   {item.category}
                 </Radio>
@@ -152,7 +152,7 @@ const Courses = () => {
   const saleCourses = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    "itemListElement": courses.map((course, index) => (
+    "itemListElement": courses?.newData?.map((course, index) => (
       {
         "@type": "ListItem",
         "position": index + 1,
@@ -306,7 +306,7 @@ const Courses = () => {
       title="Danh sách khóa học"
     >
       <section>
-        <Row gutter={[18, 18]}>
+        <Row gutter={[24, 24]}>
           <Col md={{ span: 7 }} lg={{ span: 5 }} xl={{ span: 4 }} span={24}>
             <Card className="sticky top-24 card-p2">
               {loadingCategory ? (
@@ -335,21 +335,22 @@ const Courses = () => {
                 loading={loading}
               />
             ) : (
-              <Row gutter={[18, 18]}>
+              <Row gutter={[24, 24]}>
                 {data.length === 0 ? (
                   <div className="size-full">
                     <Empty />
                   </div>
                 ) : (
-                  data.map(
+                  data?.newData?.map(
                     (course, index) =>
                       course.status !== "Chưa bán" && (
                         <Col
                           key={index}
                           sm={{ span: 12 }}
                           md={{ span: 12 }}
-                          lg={{ span: 8 }}
-                          xl={{ span: 6 }}
+                          lg={{ span: 12 }}
+                          xl={{ span: 8 }}
+                          xxl={{ span: 6 }}
                           span={24}
                         >
                           <Suspense fallback={<div>Loading...</div>}>

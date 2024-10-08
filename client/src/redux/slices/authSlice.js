@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { login, reAuth, register, loginGoogle } from "~/apis/authApi";
-import { toastError, toastLoading, toastSuccess } from "~/components/toast";
+import { toastError, toastLoading } from "~/components/toast";
 
 export const loginAuth = createAsyncThunk("login", async (body, thunkAPI) => {
   try {
@@ -8,7 +8,7 @@ export const loginAuth = createAsyncThunk("login", async (body, thunkAPI) => {
     const data = (await login(body)).data
     return data;
   } catch (error) {
-    toastError('auth', error.message, "Vui lòng đăng nhập lại!");
+    toastError('auth', "Không Thể Đăng Nhập!", error.message,);
     return thunkAPI.rejectWithValue(error?.message);
   }
 });
@@ -18,7 +18,7 @@ export const reLoginAuth = createAsyncThunk("reauth", async (body, thunkAPI) => 
     const data = (await reAuth(body)).data;
     return data;
   } catch (error) {
-    toastError('auth', "Đã xảy ra lỗi", "Vui lòng đăng nhập lại!");
+    toastError('auth', "Phiên Đăng Nhập Của Bạn Đã Hết Hạn!", "Vui lòng đăng nhập lại để tiếp tục.");
     return thunkAPI.rejectWithValue(error?.message);
   }
 });
@@ -36,7 +36,7 @@ export const registerAuth = createAsyncThunk("register", async (body, thunkAPI) 
 
 export const loginGoogleAuth = createAsyncThunk("loginGoogle", async (body, thunkAPI) => {
   try {
-    const data = await loginGoogle(body);
+    const data = (await loginGoogle(body)).data;
     return data;
   } catch (error) {
     return thunkAPI.rejectWithValue(error?.message);

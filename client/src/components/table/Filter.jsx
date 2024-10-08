@@ -188,6 +188,7 @@ export const FilterSorter = (dataIndex) => {
         },
     };
 };
+
 // example
 // ...FilterText({ dataIndex: 'address' }),
 // ...FilterSorter('address'),

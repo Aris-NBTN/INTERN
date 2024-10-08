@@ -15,10 +15,10 @@ const categoryCoursesSlice = genericSlice({
         loading: true,
         error: false,
     },
-    getApi: getCategoryCouresApi,
-    addApi: addCategoryCouresApi,
-    delApi: delCategoryCouresApi,
-    putApi: putCategoryCouresApi
+    getApi: [getCategoryCouresApi],
+    addApi: [addCategoryCouresApi],
+    delApi: [delCategoryCouresApi],
+    putApi: [putCategoryCouresApi]
 });
 
 export default categoryCoursesSlice.reducer;

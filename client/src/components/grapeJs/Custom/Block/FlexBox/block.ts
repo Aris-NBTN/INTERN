@@ -127,7 +127,7 @@ export default (editor: Editor, opt: PluginOptions = {}) => {
     .${clsCell} {
       min-height: 55px;
       flex-grow: 1;
-      flex-basis: 100%;
+      flex-basis: auto;
     }
   `;
 

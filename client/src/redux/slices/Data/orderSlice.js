@@ -12,7 +12,7 @@ const roleSlice = genericSlice({
         loading: true,
         error: false,
     },
-    getApi: getOrderApi,
+    getApi: [getOrderApi],
 });
 
 export default roleSlice.reducer;

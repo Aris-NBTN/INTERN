@@ -1,40 +1,35 @@
-import React from 'react';
-import { MediaPlayer, MediaProvider, Poster, Track } from '@vidstack/react';
+import React, { useEffect, useRef } from 'react';
+import { MediaPlayer, MediaProvider, Poster, Time, Track } from '@vidstack/react';
 import { DefaultAudioLayout, defaultLayoutIcons, DefaultVideoLayout } from '@vidstack/react/player/layouts/default';
+import './Video.css';
 
-import '@vidstack/react/player/styles/default/theme.css';
-import '@vidstack/react/player/styles/default/layouts/audio.css';
-import '@vidstack/react/player/styles/default/layouts/video.css';
+const Video = ({ list, time, title, src, poster, textTracks, thumbnailTracks, autoPlay = true, height = 'auto', mediaPlayerRef }) => {
+  return (
+    <MediaPlayer
+      ref={mediaPlayerRef}
+      style={{ height: height }}
+      className="player"
+      title={title}
+      src={src}
+      currentTime={time}
+      crossorigin
+      aspectRatio='16:9'
+      onEnded={() => console.log('Video ended')}
+      autoplay={autoPlay}
+    >
+      <MediaProvider>
+        <Poster className="vds-poster" src={poster} />
+        {textTracks?.map((track) => (
+          <Track {...track} key={track.src} />
+        ))}
+      </MediaProvider>
+      <DefaultAudioLayout icons={defaultLayoutIcons} />
+      <DefaultVideoLayout
+        icons={defaultLayoutIcons}
+        thumbnails={thumbnailTracks}
+      />
+    </MediaPlayer>
+  );
+};
 
-import './Video.css'
-const Video = ({ src, poster, textTracks, thumbnailTracks, autoPlay = true, height = 'auto' }) => {
-    return (
-        <>
-            <MediaPlayer
-                style={{ height: height }}
-                className="player"
-                src={src}
-                autoplay={autoPlay}
-                paused={true}
-            >
-                <MediaProvider>
-                    <Poster
-                        className="vds-poster"
-                        src={poster}
-                    />
-                    {textTracks?.map((track) => (
-                        <Track {...track} key={track.src} />
-                    ))}
-                </MediaProvider>
-                <DefaultAudioLayout icons={defaultLayoutIcons} />
-                <DefaultVideoLayout
-                    icons={defaultLayoutIcons}
-                    thumbnails={thumbnailTracks}
-                />
-            </MediaPlayer>
-
-        </>
-    )
-}
-
-export default Video
+export default Video;

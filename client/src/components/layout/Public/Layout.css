@@ -149,7 +149,7 @@ input::placeholder {
 
 @media screen and (max-width: 576px) {
     .hidden-mobile {
-        display: none;
+        display: none !important;
     }
 
     .hidden-desktop {

@@ -2,13 +2,13 @@ import { instance } from ".";
 
 const baseURL = "/v1/courser";
 
-const all = async () => {
-    const response = await instance.get(`${baseURL}`)
+const get = async (body) => {
+    const response = await instance.get(`${baseURL}?page=${body?.page || 1}&limit=${body?.limit || 10}`)
     return response
 }
 
-const get = async () => {
-    const response = await instance.get(`${baseURL}/courser-admin`)
+const sigAdmin = async (slug) => {
+    const response = await instance.get(`${baseURL}/sig-admin/${slug}`)
     return response
 }
 
@@ -27,6 +27,11 @@ const put = async (body) => {
     return response
 }
 
+const putOrder = async (body) => {
+    const response = await instance.put(`${baseURL}/order`, body)
+    return response
+}
+
 const del = async (id) => {
     const response = await instance.delete(`${baseURL}/${id}`)
     return response
@@ -38,7 +43,12 @@ const cart = async (body) => {
 }
 
 const outstand = async (body) => {
-    const response = await instance.get(`${baseURL}/outstand`, body)
+    const response = await instance.post(`${baseURL}/outstand`, body)
+    return response
+}
+
+const free = async (body) => {
+    const response = await instance.get(`${baseURL}/free`, body)
     return response
 }
 
@@ -47,14 +57,89 @@ const search = async (body) => {
     return response
 }
 
+const checkCourseUser = async (body) => {
+    const response = await instance.post(`${baseURL}/user`, body)
+    return response
+}
+
 export const courseApi = {
-    all,
     get,
     sig,
     add,
     put,
+    putOrder,
     del,
     cart,
+    sigAdmin,
     outstand,
-    search
+    checkCourseUser,
+    search,
+    free
 }
+
+const getModuleUser = async (body) => {
+    const response = await instance.get(`${baseURL}/user/module/${body.id}`, body)
+    return response
+}
+
+const getModule = async (body) => {
+    const response = await instance.get(`${baseURL}/admin/module/${body.id}`, body)
+    return response
+}
+
+const addModule = async (body) => {
+    const response = await instance.post(`${baseURL}/admin/module/${body.id}`, body)
+    return response
+}
+
+const putModule = async (body) => {
+    const response = await instance.put(`${baseURL}/admin/module/${body.id}/moduleId/${body.moduleId}`, body)
+    return response
+}
+
+const delModule = async (body) => {
+    const response = await instance.delete(`${baseURL}/admin/module/${body.id}/moduleId/${body.moduleId}`, body)
+    return response
+}
+
+export const courseModuleApi = {
+    getModuleUser,
+    getModule,
+    addModule,
+    putModule,
+    delModule
+}
+
+const getChildren = async (body) => {
+    const response = await instance.get(`${baseURL}/admin/children/${body.id}`, body)
+    return response
+}
+
+const addChildren = async (body) => {
+    const response = await instance.post(`${baseURL}/admin/children/${body.id}`, body)
+    return response
+}
+
+const getChildrenPage = async (body) => {
+    const response = await instance.get(`${baseURL}/admin/children/${body.id}/childId/${body.childId}`)
+    return response
+}
+
+const putChildren = async (body) => {
+    const response = await instance.put(`${baseURL}/admin/children/${body.id}/childId/${body.childId}`, body)
+    return response
+}
+
+const delChildren = async (body) => {
+    const response = await instance.delete(`${baseURL}/admin/children/${body.id}/childId/${body.childId}`)
+    return response
+}
+
+export const courseChildrenApi = {
+    getChildren,
+    getChildrenPage,
+    addChildren,
+    putChildren,
+    delChildren
+}
+

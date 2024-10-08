@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import LayoutAdmin from '~/components/layout/Admin/Layout'
 import GrapeJs from '~/components/grapeJs/GrapeJs'
 import { useNavigate, useParams } from 'react-router-dom';
 
 import pluginWebpage from 'grapesjs-preset-webpage';
 import blockBasic from 'grapesjs-blocks-basic';
-// import pluginEditImage from 'grapesjs-tui-image-editor';
 import pluginEditImage from '~/components/grapeJs/Custom/ImageEdit';
 import pluginStyleBg from 'grapesjs-style-bg';
 import pluginTailwind from 'grapesjs-tailwind';
@@ -45,16 +44,15 @@ const Pages = () => {
     const [loading, setLoading] = useState(true);
 
     const dispatch = useDispatch();
-    const datascript = useSelector((state) => state.pluginsScript.pluginsScript);
-    const loadingscript = useSelector((state) => state.pluginsScript.loading);
     const { plugins, loading: loadingPlugins } = useSelector((state) => state.plugins);
+    const { pluginsScript, loading: loadingscript } = useSelector((state) => state.pluginsScript);
 
     const dataPlugins = useMemo(() =>
-        plugins.map((groupPage) => ({
+        plugins?.newData?.map((groupPage) => ({
             id: groupPage.id,
             src: `${baseURL}/uploads/${groupPage.src}`,
         })),
-        [plugins]
+        [plugins?.newData]
     );
 
     const configGrapeJs = (editor) => {
@@ -212,8 +210,8 @@ const Pages = () => {
     }, []);
 
     useEffect(() => {
-        if (loadingPlugins === true) {
-            dispatch(getPluginsApi());
+        if (loadingPlugins) {
+            dispatch(getPluginsApi())
         }
     }, []);
 
@@ -223,11 +221,12 @@ const Pages = () => {
 
     return (
         <LayoutAdmin
+            title={`Trang ${page?.name || ''}`}
             margin={0}
             header={
                 <div className='flex items-center gap-2'>
                     <Button onClick={() => navigate('/admin/pages')}> <TbArrowBack size={20} /> Trở về</Button>
-                    Tên trang: {page.name || ''} | Đường dẫn: /{page.slug || ''}
+                    Tên trang: {page?.name || ''} | Đường dẫn: /{page?.slug || ''}
                 </div>
             }
         >
@@ -235,20 +234,18 @@ const Pages = () => {
                 <SkeletonGrapeJs />
             )}
 
-            {!loading && !loadingPlugins && datascript[0]?.scripts && (
+            {!loading && !loadingPlugins && (
                 <>
                     <GrapeJs
-                        data={page.edit || ''}
+                        data={page?.edit || ''}
                         loadData={loading}
                         configGrapeJs={configGrapeJs}
                         height='calc(100vh - 56px)'
-                        slug={params.slug}
-                        folder={page.name}
-                        scripts={datascript[0]?.scripts}
-                        styles={datascript[0]?.styles}
+                        slug={params?.slug}
+                        folder={page?.name}
+                        canvas={pluginsScript[0]}
                         pluginss={dataPlugins}
                         plugins={[
-                            // grapesjsIcons,
                             pluginWebpage,
                             blockBasic,
                             pluginEditImage,

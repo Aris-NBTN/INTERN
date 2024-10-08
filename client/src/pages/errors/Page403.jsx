@@ -3,7 +3,7 @@ import './PageError.css'
 import LayoutPublic from '~/components/layout/Public/Layout';
 const PageNotFound = () => {
     return (
-        <LayoutPublic>
+        <LayoutPublic title="Không có quyền truy câp">
             <div className='page404'>
                 <div className="wrapper">
                     <div className="container">

@@ -12,7 +12,7 @@ const outStandSlice = genericSlice({
         loading: true,
         error: false,
     },
-    getApi: getCourseOutstandApi,
+    getApi: [getCourseOutstandApi],
 });
 
 export default outStandSlice.reducer;

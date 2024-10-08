@@ -6,6 +6,8 @@ const name = 'users'
 export const getUsersApi = genericThunk(`${name}/get`, userApi.get);
 export const delUsersApi = genericThunk(`${name}/del`, userApi.del);
 export const putUsersApi = genericThunk(`${name}/put`, userApi.put);
+export const putUsersNotifyApi = genericThunk(`${name}/putNotify`, userApi.putUserNotify);
+
 
 const usersSlice = genericSlice({
     name: name,
@@ -14,9 +16,9 @@ const usersSlice = genericSlice({
         loading: true,
         error: false,
     },
-    getApi: getUsersApi,
-    delApi: delUsersApi,
-    putApi: putUsersApi
+    getApi: [getUsersApi, putUsersNotifyApi],
+    delApi: [delUsersApi],
+    putApi: [putUsersApi]
 });
 
 export default usersSlice.reducer;

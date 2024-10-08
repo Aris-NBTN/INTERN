@@ -12,7 +12,7 @@ const revenueSlice = genericSlice({
         loading: true,
         error: false,
     },
-    getApi: getRevenueApi,
+    getApi: [getRevenueApi],
 });
 
 export default revenueSlice.reducer;

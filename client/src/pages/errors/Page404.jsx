@@ -4,7 +4,7 @@ import LayoutPublic from '~/components/layout/Public/Layout';
 const PageNotFound = () => {
 
     return (
-        <LayoutPublic>
+        <LayoutPublic title="Không tìm thấy trang">
             <div className='page404'>
                 <div className="wrapper">
                     <div className="container">

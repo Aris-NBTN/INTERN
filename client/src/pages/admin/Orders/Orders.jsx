@@ -10,6 +10,8 @@ import { exportDataExcel, exportToPDF } from '~/utils/export';
 import { useDispatch, useSelector } from 'react-redux';
 import { getOrderApi } from '~/redux/slices/Data/orderSlice';
 import { FormatDay } from '~/components/table/Format';
+import { orderApi } from '~/apis/orderApi';
+import { toastError, toastSuccess } from '~/components/toast';
 
 const Orders = () => {
     const { order, loading } = useSelector((state) => state.order);
@@ -78,7 +80,7 @@ const Orders = () => {
     ];
 
     const dataPages = useMemo(() =>
-        order.map((page) => ({
+        order?.newData?.map((page) => ({
             ...page,
             key: page._id,
         })),
@@ -86,8 +88,8 @@ const Orders = () => {
     );
 
     useEffect(() => {
-        if (loading === true) {
-            dispatch(getOrderApi());
+        if (loading) {
+            dispatch(getOrderApi({ page: 1, limit: localStorage.getItem('pageSize') || 10 }));
         }
     }, []);
 
@@ -102,11 +104,23 @@ const Orders = () => {
             }
             button={
                 <>
+                    <Button onClick={() => {
+                        orderApi
+                            .delUnPaid()
+                            .then((res) => {
+                                dispatch(getOrderApi({ page: 1, limit: localStorage.getItem('pageSize') || 10 }));
+                                toastSuccess('data', 'Xóa Đơn Hàng Chưa Thanh Toán Thành Công!', res.message);
+                            })
+                            .catch((err) => toastError('data', 'Không Thể Xóa Đơn Hàng!', err.message));
+                    }} type='primary'>Xóa đơn hàng chưa thanh toán</Button>
                     <Button onClick={() => exportDataExcel(order, 'Order.xlsx')} type='primary'>Xuất file Excel</Button>
                 </>
             }
         >
             <Table
+                dragMode={false}
+                Api={getOrderApi}
+                total={order?.totalItems}
                 loading={loading}
                 data={dataPages}
                 columns={columns}

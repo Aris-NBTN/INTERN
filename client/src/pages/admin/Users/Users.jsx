@@ -29,14 +29,13 @@ const User = () => {
     const [openCourses, setOpenCourses] = useState(false);
 
     const data = useMemo(() =>
-        users.map((user) => ({
+        Array.isArray(users?.newData) ? users.newData.map((user) => ({
             ...user,
-            key: user._id,
-            activeStatus: user.activeStatus ? 'Cho phép' : 'Chặn'
-        })),
+            key: user?._id,
+            activeStatus: user?.activeStatus ? 'Cho phép' : 'Chặn'
+        })) : [],
         [users]
     );
-
     const dataRole = useMemo(() =>
         roles.map((role) => ({
             ...role,
@@ -46,7 +45,7 @@ const User = () => {
     );
 
     const dataCourses = useMemo(() =>
-        courses.map((course) => ({
+        courses?.newData?.map((course) => ({
             key: course._id,
             label: course.name,
             value: course._id
@@ -75,14 +74,10 @@ const User = () => {
             dataIndex: 'email',
             width: '10%',
             editable: false,
+            ellipsis: {
+                showTitle: true,
+            },
             ...FilterText({ dataIndex: 'email' }),
-            render: (email) => <>
-                <Typography.Paragraph
-                    ellipsis={{ suffix: '' }}
-                >
-                    {email}
-                </Typography.Paragraph>
-            </>
         },
         {
             title: 'Điện Thoại',
@@ -167,6 +162,8 @@ const User = () => {
         },
     ];
 
+    const [drag, setDrag] = useState(localStorage.getItem('drag') === 'true' ? true : false);
+
     const handleDelUser = (data) => {
         genericDispatch(dispatch, delUsersApi(data));
     }
@@ -197,8 +194,8 @@ const User = () => {
     };
 
     useEffect(() => {
-        if (loading === true) {
-            dispatch(getUsersApi());
+        if (loading) {
+            dispatch(getUsersApi({ page: 1, limit: localStorage.getItem('pageSize') || 10 }));
             dispatch(getRoleApi());
         }
     }, []);
@@ -214,12 +211,30 @@ const User = () => {
             header={'NGƯỜI DÙNG'}
             button={
                 <>
+                    {drag ?
+                        <Button onClick={() => {
+                            setDrag(false);
+                            localStorage.setItem('drag', 'false');
+                        }}>
+                            <Typography>Tắt sắp xếp</Typography>
+                        </Button>
+                        :
+                        <Button type='primary' onClick={() => {
+                            setDrag(true);
+                            localStorage.setItem('drag', 'true');
+                        }}>
+                            Bật sắp xếp
+                        </Button>}
+
                     <Button onClick={() => setOpenRole(true)} type='primary'>Phân quyền</Button>
-                    <Button onClick={() => exportDataExcel(users, 'Users.xlsx')} type='primary' >Xuất file Excel</Button>
+                    <Button onClick={() => exportDataExcel(data, 'Users.xlsx')} type='primary' >Xuất file Excel</Button>
                 </>
             }
         >
             <Table
+                Api={getUsersApi}
+                total={users?.totalItems}
+                dragMode={drag}
                 loading={loading}
                 data={data}
                 columns={columns}
